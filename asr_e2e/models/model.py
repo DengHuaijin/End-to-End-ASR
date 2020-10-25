@@ -149,6 +149,51 @@ class Model:
 				# doing a few steps if data size is not divisible by the batch size
 				self._step_in_epoch = self.get_data_layer().get_size_in_samples() // self.get_data_layer().params["batch_size"]
 				
+				if self._step_in_epoch is None:
+					raise ValueError("The data_layer is not compatible with epoch execution")
+				
+				self._step_in_epoch //= self.num_gpus
+				self._step_in_epoch //= self._params.get("iter_size", 1)
+				
+				if self._step_in_epoch == 0:
+					raise ValueError("Overall batch size is too big for this dataset")
+				self._last_step = self._params["num_epochs"] * self._step_in_epoch
+				
+		self._outputs = [None] * self.num_gpus
+		
+		self.loss = None
+		self.train_op = None
+		self.eval_losses = None
+		self._num_objects_per_step = None
+		self.skip_update_ph = None
+		
+	def compile(self, force_var_refuse = False, checkpoint = False):
+	"""
+	Tensorflow graph is build here.
+	"""
+		if "initializer" not in self.params:
+			initializer = None
+		else:
+			init_dict = self.params.get("initializer_params",{})
+			initializer = self.params["initializer"](**init_dict)
+		
+		losses = []
+		for gpu_cnt, gpu_id in enumerate(self._gpu_ids):
+			with tf.device("/gpu:{}".format(gpu_id)), tf.variable_scope(
+			name_or_scope = tf.get_variable_scope(), reuse = force_var_reuse or (gpu_cnt > 0),
+			initializer = initializer,
+			dtype = self.get_tf_dtype()):
+				
+				deco_print("Building graph on GPU:{}".format(gpu_id))
+				
+				self.get_data_layer(gpu_cnt).build_graph()
+				input_tensors = self.get_data_layer(gpu_cnt).input_tensors
+				
+				loss, self._outputs[gpu_cnt] = self._build_forward_pass_graph(input_tensors, gpu_id = gpu_cnt)
+				if self._outputs[gpu_cnt] is not None and not isinstance(self._outputs[gpu_cnt], list):
+					raise ValueError("Decoder outputs have to be either None or list")
+				if self._mode == "train" or self._mode == "eval":
+					losses.append(loss)
 			
 			
 		
