@@ -4,4 +4,4 @@
 
 2020/10/23 从model的基类开始写起，开发中...
 
-初始版本不需要interence模式以及horovod模式
+初始版本不需要interence模式 horovod模式 以及interactive模式，后面有需求再添加
