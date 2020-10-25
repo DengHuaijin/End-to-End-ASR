@@ -194,9 +194,175 @@ class Model:
 					raise ValueError("Decoder outputs have to be either None or list")
 				if self._mode == "train" or self._mode == "eval":
 					losses.append(loss)
+                
+                # end of for gpu_ind loop
+                if self._mode == "train":
+                    self.loss = tf.reduce_mean(losses)
+                if self._mode == "eval":
+                    self.eval_losses = losses
+
+                try:
+                    self._num_objects_per_step = [self._get_num_objects_per_step(worker_id) for worker_id in range(self.num_gpus)]
+                except NotImplementedError:
+                    pass
+
+                if self._mode == "train":
+                    if "lr_policy" not in self.params:
+                        lr_policy = None
+                    else:
+                        lr_params = self.params.get("lr_policy_params", {})
+
+                        func_params = signature(self.params["lr_policy"]).parameters
+                        if "decay_steps" in func_params and "decay_steps" not in lr_params:
+                            lr_params["decay_steps"] = self._last_step
+                            if "begin_decay_at" in func_params:
+                                if "warmup_steps" in func_params:
+                                    lr_params["begin_decay_at"] = max(lr_params.get("begin_decay_at", 0), lr_prams.get("warmup_steps", 0))
+                        
+                        if "steps_per_epoch" in func_params and "steps_per_epoch" not in lr_params and "num_epochs" in self.params:
+                            lr_params["steps_per_epoch"] = self.steps_per_epoch
+                        lr_policy = lambda gs:self.params["lr_policy"](global_step = gs, **lr_params)
+
+                    if self.params.get("iter_size", 1) > 1:
+                        self.skip_update_ph = tf.placeholder(tf.bool)
+
+                    var_list = tf.trainable_variables()
+                    freeze_variables_regex = self.params.get("freeze_variables_regex", None)
+                    if freeze_variables_regex is not None:
+                        pattern = re.compile(freeze_variables_regex)
+                        var_list = [var for var in tf.trainable_variables() if not pattern.match(var.name)]
+
+                    self.train_op = optimize_loss(
+                            loss = tf.cast(self.loss, tf.float32) + get_regularization_loss(),
+                            dtype = self.params["dtype"],
+                            optimizer = self.params["optimizer"],
+                            var_list = var_list,
+                            clip_gradients = self.params.get("max_grad_norm", None),
+                            learning_rate_decay_fn = lr_policy,
+                            summaries = self.params.get("summaries", None),
+                            larc_summaries = self.params.get("larc_summaries", None),
+                            loss_scaling = self.params.get("loss_scaling", 1.0),
+                            loss_scaling_params = self.params.get("loss_scaling_params", None),
+                            iter_size = self.params.get("iter_size", 1),
+                            skip_update_ph = self.skip_update_ph,
+                            model = self
+                            )
+                    tf.summary.scalar(name = "train_loss", tensor = self.loss)
+                    if self.steps_in_epoch:
+                        tf.summary.scalar(
+                                name = "epoch",
+                                tensor = tf.floor(tf.train.get_global_step() / tf.constant(self.steps_in_epoch, dtype = tf.int64))
+                                )
+
+                    if freeze_variables_regex is not None:
+                        deco_print("Complete list of variables:")
+                        for var in tf.trainable_variables():
+                            deco_print("{}".format(var.name), offset = 2)
+                        deco_print("Trainable variables:")
+                        total_params = 0
+                        unknown_shapes = False
+                        for var in var_list:
+                            var_params = 1
+                            deco_print("{}".format(var.name), offset = 2)
+                            deco_print("shape: {}, {}".format(var.get_shape(), var.dtype), offset = 2)
+
+                            if var.get_shape():
+                                for dim in var.get_shape():
+                                    var_params *= dim.value
+                                total_params += var_params
+                            else:
+                                unknown_shapes = True
+                        
+                        if unknown_shapes:
+                            deco_print("Encountered unknown variable shape, can't compute total number of parameters")
+                        else:
+                            deco_print("Total trainable parameters: {}".format(total_aprams))
+
+        
+        @abc.abstractmethod
+        def _build_forward_pass_graph(self, input_tensors, gpu_id = 0):
+            """
+            Should create the graph of the forward pass of the model.
+
+            Returns:
+            tuple: containing loss tensor and list of outputs tensors.
+            """
+            pass
 			
-			
+        def evaluate(self, input_values, output_values):
+            """
+            This function is not abstract and does not have to be implemented 
+            in derived classes. But if evaluation functionality is required,
+            overwriting this function can be a useful way to add it.
+
+            Returns:
+            list: all necessary values for evaluation finilization.
+            """
+            return []
+
+        def finilize_evaluation(self, results_per_batch, training_step = None):
+            """
+            Args:
+            results_per_batch(list)
+            training_step(int): current training step
+
+            Returns:
+            dict: dictionary with values that need to be logged to Tensorboard.
+            """
+            return {}
+
+        def clip_last_batch(self, last_batch, true_size):
+
+            return clip_last_batch(last_batch, true_size)
+
+        def get_output_tensors(self, worker_id = 0):
+            
+            return self._outputs[worker_id]
+
+        def get_data_layer(self, worker_id = 0):
+            
+            return self._data_layers[worker_id]
 		
+        def get_tf_dtype(self):
+            
+            if self.params["dtype"] == "mixed":
+                return tf.float16
+            else:
+                return self.params["dtype"]
+
+        def _get_num_objects_per_step(self, worker_id = 0):
+            
+            raise NotImplementedError()
+
+        def get_num_objects_per_step(self, worker_id = 0):
+
+            is self._num_objects_per_step:
+                return self._num_objects_per_step[worker_id]
+            else:
+                raise NotImplementedError
+
+        @property
+        def params(self):
+
+            return self._params
 		
-		
+	@property
+        def steps_in_epoch(self):
+            
+            return self._step_in_epoch
+
+        @property
+        def last_step(self):
+
+            return self._last_step
+
+        @property
+        def num_gpus(self):
+            
+            return len(self._gpu_ids)
+
+        @property
+        def mode(self):
+
+            return self._mode
 
