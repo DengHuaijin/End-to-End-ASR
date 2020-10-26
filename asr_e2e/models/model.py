@@ -13,7 +13,7 @@ except ImportError:
     from funcsigs import signature
 
 from asr_e2e.utils.utils import deco_print, clip_last_batch
-from asr_e2e.optimizers import optimize_loss, get_regularization_loss
+from asr_e2e.optimizers.optimizers import optimize_loss, get_regularization_loss
 from asr_e2e.utils.utils import check_params
 
 @six.add_metaclass(abc.ABCMeta)
@@ -217,9 +217,9 @@ class Model:
                 
                 loss, self._outputs[gpu_cnt] = self._build_forward_pass_graph(input_tensors, gpu_id = gpu_cnt)
                 if self._outputs[gpu_cnt] is not None and not isinstance(self._outputs[gpu_cnt], list):
-                        raise ValueError("Decoder outputs have to be either None or list")
+                    raise ValueError("Decoder outputs have to be either None or list")
                 if self._mode == "train" or self._mode == "eval":
-                        losses.append(loss)
+                    losses.append(loss)
     
         # end of for gpu_ind loop
         if self._mode == "train":
@@ -244,9 +244,10 @@ class Model:
                     if "begin_decay_at" in func_params:
                         if "warmup_steps" in func_params:
                             lr_params["begin_decay_at"] = max(lr_params.get("begin_decay_at", 0), lr_prams.get("warmup_steps", 0))
+                        lr_params["decay_steps"] -= lr_params.get("begin_decay_at", 0)
                 
                 if "steps_per_epoch" in func_params and "steps_per_epoch" not in lr_params and "num_epochs" in self.params:
-                    lr_params["steps_per_epoch"] = self.steps_per_epoch
+                    lr_params["steps_per_epoch"] = self.steps_in_epoch
                 lr_policy = lambda gs:self.params["lr_policy"](global_step = gs, **lr_params)
 
             if self.params.get("iter_size", 1) > 1:
@@ -259,26 +260,27 @@ class Model:
                 var_list = [var for var in tf.trainable_variables() if not pattern.match(var.name)]
 
             self.train_op = optimize_loss(
-                    loss = tf.cast(self.loss, tf.float32) + get_regularization_loss(),
-                    dtype = self.params["dtype"],
-                    optimizer = self.params["optimizer"],
-                    var_list = var_list,
-                    clip_gradients = self.params.get("max_grad_norm", None),
-                    learning_rate_decay_fn = lr_policy,
-                    summaries = self.params.get("summaries", None),
-                    larc_summaries = self.params.get("larc_summaries", None),
-                    loss_scaling = self.params.get("loss_scaling", 1.0),
-                    loss_scaling_params = self.params.get("loss_scaling_params", None),
-                    iter_size = self.params.get("iter_size", 1),
-                    skip_update_ph = self.skip_update_ph,
-                    model = self
-                    )
+                loss = tf.cast(self.loss, tf.float32) + get_regularization_loss(),
+                dtype = self.params["dtype"],
+                optimizer = self.params["optimizer"],
+                var_list = var_list,
+                clip_gradients = self.params.get("max_grad_norm", None),
+                learning_rate_decay_fn = lr_policy,
+                summaries = self.params.get("summaries", None),
+                larc_summaries = self.params.get("larc_summaries", None),
+                loss_scaling = self.params.get("loss_scaling", 1.0),
+                loss_scaling_params = self.params.get("loss_scaling_params", None),
+                iter_size = self.params.get("iter_size", 1),
+                skip_update_ph = self.skip_update_ph,
+                model = self
+                )
+            
             tf.summary.scalar(name = "train_loss", tensor = self.loss)
             if self.steps_in_epoch:
                 tf.summary.scalar(
-                        name = "epoch",
-                        tensor = tf.floor(tf.train.get_global_step() / tf.constant(self.steps_in_epoch, dtype = tf.int64))
-                        )
+                    name = "epoch",
+                    tensor = tf.floor(tf.train.get_global_step() / tf.constant(self.steps_in_epoch, dtype = tf.int64))
+                    )
 
             if freeze_variables_regex is not None:
                 deco_print("Complete list of variables:")
