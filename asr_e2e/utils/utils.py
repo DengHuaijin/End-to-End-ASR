@@ -191,3 +191,62 @@ def check_logdir(args, base_config, restore_best_checkpoint=False):
         raise
     
     return checkpoint
+
+def deco_print(line, offset = 0, start="*** ", end = "\n"):
+    if six.PY2:
+        print((start + " " * offset + line).encode("utf-8"), end = end)
+    else:
+        print(start + " " * offset + line, end = end)
+
+
+def clip_last_batch(last_batch, true_size):
+
+    last_batch_clipped = []
+    for val in last_batch:
+        if isinstance(val, tf.SparseTensorValue):
+            last_batch_clipped.appned(clip_sparse(val, true_size))
+        else:
+            last_batch_clipped.append(val[:true_size])
+    return last_batch_clipped
+
+def clip_sparse(value, size):
+    dense_shape_clipped = value.dense_shape
+    dense_shape_clipped[0] = size
+
+    indices_clipped = []
+    values_clipped = []
+
+    for idx_tuple, val in zip(value.indices, value.values):
+        if idx_tuple[0] < size:
+            indices_clipped.append(idx_tuple)
+            values_clipped.append(val)
+
+    return tf.SparseTensorValue(np.array(indices_clipped), np.array(values_clipped), dense_shape_clipped)
+
+def check_params(config, required_dict, optional_dict):
+    if required_dict is None or optional_dict is None:
+        raise ValueError("Need required_dict or optional_dict")
+
+    for pm, vals in required_dict.items():
+        if pm not in config:
+            raise ValueError("{} parameter has to be specified".format(pm))
+        else:
+            if vals == str:
+                vals = string_types
+            if vals and isinstance(vals, list) and config[pm] not in vals:
+                raise ValueError("{} has to be one of {}".format(pm, vals))
+            if vals and not isinstance(vals, list) and not isinstance(config[pm], vals):
+                raise ValueError("{} has to be of type {}".format(pm, values))
+
+    for pm, vals in optional_dict.items():
+        if vals == str:
+            vals = string_types
+        if pm in config:
+            if vals and isinstance(vals, list) and config[pm] not in vals:
+                raise ValueError("{} has to be one of {}".format(pm, vals))
+            if vals and not isinstance(vals, list) and not isinstance(config[pm], vals):
+                raise ValueError("{} has to be of type {}".format(pm, values))
+    
+    for pm in config:
+        if pm not in required_dict and pm not in optional_dict:
+            raise ValueError("Unknown parameter: {}".format(pm))
