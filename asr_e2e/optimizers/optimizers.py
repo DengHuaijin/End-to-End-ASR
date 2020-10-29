@@ -34,6 +34,7 @@ OPTIMIZER_SUMMARIES = ]
 def get_regularization_loss(scope = None, name = "total_regularization_loss"):
     
     losses = tf.losses.get_regularization_loss(scope)
+    # tf.add_n Adds all tensors element-wise
     if losses:
         return tf.add_n(list(map(lambda x: tf.cast(x, tf.float32), losses)), name = name)
     else:
@@ -82,6 +83,11 @@ def optimize_loss(loss,
 
         with tf.variable_scope("Loss Optimization"):
             update_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
+            """
+            contro_flow_ops.with_dependencies 实现图节点之间的依赖控制
+            with_dependencies(dependencies, output_tensor, name = None)
+
+            """
             loss = control_flow_ops.with_dependencies(list(update_ops), loss)
 
             if optimizer == "AdamW":
@@ -90,9 +96,7 @@ def optimize_loss(loss,
             # Create optimizer, given specified parameters
             if isinstance(optimizer, six.string_types):
                 if optimizer not in OPTIMIZER_CLS_NAMES:
-                    raise ValueError(
-                            "Optimizer name should be one of [{}], you provided {}".format(
-                                ", ".join(OPTIMIZER_CLS_NAMES), optimizer))
+                    raise ValueError("Optimizer name should be one of [{}], you provided {}".format(", ".join(OPTIMIZER_CLS_NAMES), optimizer))
                 optimizer = OPTIMIZER_CLS_NAMES[optimizer]
 
             opt = optimizer(learning_rate = lr, **optimizer_params)
@@ -106,10 +110,26 @@ def optimize_loss(loss,
             if dtype == "mixed":
                 opt = MixedPrecisionOptimizerWrapper(opt, loss_scale = loss_scaling)
 
-            # Computr gradients
+            """
+            Computr gradients
+            Inputs:
+                var_list: A list or tuple of tf.Variable to update to minimize loss.
+                          Defaults to the list of variables collected in the graph 
+                          under the key GraphKeys.TRAINABLE_VARIABLES
+            Returns:
+                A list of (gradients, variable) pairs. Variable is always present but gradient can be None
+            """
             grads_and_vars = opt.compute_gradients(
                     loss, colocate_gradients_with_ops = True, var_list = var_list)
 
+            """
+            apply_gradients returns an Operation that applies gradients.
+            Inputs
+                grads_and_vars: List of (gradients, variable) pairs as returned by compute_gradients()
+                global_step: Optional Varibale to increment by one after the variables have been updated
+            Returns:
+                If global_step was not None, that operation also increments gloabl_step
+            """
             grad_updates = opt.apply_gradients(
                     post_process_gradients(
                         grads_and_vars,
@@ -117,8 +137,7 @@ def optimize_loss(loss,
                         clip_gradients = clip_gradients,
                         larc_params = larc_params,
                         summaries = summaries),
-                    global_step = gloabl_step
-                    )
+                    global_step = gloabl_step)
             
             # ensure the train tensor computes grad_updates
             train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
