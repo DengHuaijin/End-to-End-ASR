@@ -72,77 +72,77 @@ def optimize_loss(loss,
                         "Summaries should be one of [{}], you provided {}.".format(
                             ",".join(OPTIMIZER_SUMMARIES), sumn))
 
-        if clip_gradients is not None and larc_params is not None:
-            raise AttributeError(
-                    "LARC and gradient norm clipping should not be used together")
+    if clip_gradients is not None and larc_params is not None:
+        raise AttributeError(
+                "LARC and gradient norm clipping should not be used together")
 
-        global_step = tf.train.get_or_create_gloabl_step()
-        lr = learning_rate_decay_fn(global_step)
-        if "learning_rate" in summaries:
-            tf.summary.scalar("learning_rate", lr)
+    global_step = tf.train.get_or_create_gloabl_step()
+    lr = learning_rate_decay_fn(global_step)
+    if "learning_rate" in summaries:
+        tf.summary.scalar("learning_rate", lr)
 
-        with tf.variable_scope("Loss Optimization"):
-            update_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
-            """
-            contro_flow_ops.with_dependencies 实现图节点之间的依赖控制
-            with_dependencies(dependencies, output_tensor, name = None)
+    with tf.variable_scope("Loss Optimization"):
+        update_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
+        """
+        contro_flow_ops.with_dependencies 实现图节点之间的依赖控制
+        with_dependencies(dependencies, output_tensor, name = None)
 
-            """
-            loss = control_flow_ops.with_dependencies(list(update_ops), loss)
+        """
+        loss = control_flow_ops.with_dependencies(list(update_ops), loss)
 
-            if optimizer == "AdamW":
-                optimizer_params["weight_decay"] = optimizer_params["weight_decay"] * lr
+        if optimizer == "AdamW":
+            optimizer_params["weight_decay"] = optimizer_params["weight_decay"] * lr
 
-            # Create optimizer, given specified parameters
-            if isinstance(optimizer, six.string_types):
-                if optimizer not in OPTIMIZER_CLS_NAMES:
-                    raise ValueError("Optimizer name should be one of [{}], you provided {}".format(", ".join(OPTIMIZER_CLS_NAMES), optimizer))
-                optimizer = OPTIMIZER_CLS_NAMES[optimizer]
+        # Create optimizer, given specified parameters
+        if isinstance(optimizer, six.string_types):
+            if optimizer not in OPTIMIZER_CLS_NAMES:
+                raise ValueError("Optimizer name should be one of [{}], you provided {}".format(", ".join(OPTIMIZER_CLS_NAMES), optimizer))
+            optimizer = OPTIMIZER_CLS_NAMES[optimizer]
 
-            opt = optimizer(learning_rate = lr, **optimizer_params)
+        opt = optimizer(learning_rate = lr, **optimizer_params)
 
-            if isinstance(loss_scaling, six.string_types):
-                loss_scaling = AutomaticLossScaler(algorithm = loss_scaling,
-                                                   params = loss_scaling_params)
-            if "loss_scale" in summaries:
-                tf.summary.scalar("loss_scale", loss_scaling.loss_scale)
+        if isinstance(loss_scaling, six.string_types):
+            loss_scaling = AutomaticLossScaler(algorithm = loss_scaling,
+                                               params = loss_scaling_params)
+        if "loss_scale" in summaries:
+            tf.summary.scalar("loss_scale", loss_scaling.loss_scale)
 
-            if dtype == "mixed":
-                opt = MixedPrecisionOptimizerWrapper(opt, loss_scale = loss_scaling)
+        if dtype == "mixed":
+            opt = MixedPrecisionOptimizerWrapper(opt, loss_scale = loss_scaling)
 
-            """
-            Computr gradients
-            Inputs:
-                var_list: A list or tuple of tf.Variable to update to minimize loss.
-                          Defaults to the list of variables collected in the graph 
-                          under the key GraphKeys.TRAINABLE_VARIABLES
-            Returns:
-                A list of (gradients, variable) pairs. Variable is always present but gradient can be None
-            """
-            grads_and_vars = opt.compute_gradients(
-                    loss, colocate_gradients_with_ops = True, var_list = var_list)
+        """
+        Computr gradients
+        Inputs:
+            var_list: A list or tuple of tf.Variable to update to minimize loss.
+                      Defaults to the list of variables collected in the graph 
+                      under the key GraphKeys.TRAINABLE_VARIABLES
+        Returns:
+            A list of (gradients, variable) pairs. Variable is always present but gradient can be None
+        """
+        grads_and_vars = opt.compute_gradients(
+                loss, colocate_gradients_with_ops = True, var_list = var_list)
 
-            """
-            apply_gradients returns an Operation that applies gradients.
-            Inputs
-                grads_and_vars: List of (gradients, variable) pairs as returned by compute_gradients()
-                global_step: Optional Varibale to increment by one after the variables have been updated
-            Returns:
-                If global_step was not None, that operation also increments gloabl_step
-            """
-            grad_updates = opt.apply_gradients(
-                    post_process_gradients(
-                        grads_and_vars,
-                        lr = lr,
-                        clip_gradients = clip_gradients,
-                        larc_params = larc_params,
-                        summaries = summaries),
-                    global_step = gloabl_step)
-            
-            # ensure the train tensor computes grad_updates
-            train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
+        """
+        apply_gradients returns an Operation that applies gradients.
+        Inputs
+            grads_and_vars: List of (gradients, variable) pairs as returned by compute_gradients()
+            global_step: Optional Varibale to increment by one after the variables have been updated
+        Returns:
+            If global_step was not None, that operation also increments gloabl_step
+        """
+        grad_updates = opt.apply_gradients(
+                post_process_gradients(
+                    grads_and_vars,
+                    lr = lr,
+                    clip_gradients = clip_gradients,
+                    larc_params = larc_params,
+                    summaries = summaries),
+                global_step = gloabl_step)
+        
+        # ensure the train tensor computes grad_updates
+        train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
 
-            return train_tensor
+        return train_tensor
 
 def post_process_gradients(grads_and_vars, summaries, lr, 
                            clip_gradients,larc_params):
