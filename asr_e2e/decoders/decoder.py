@@ -12,7 +12,7 @@ from asr_e2e.utils.utils import check_params, cast_types
 
 @six.add_metaclass(abc.ABCMeta)
 class Decoder:
-
+    
     @staticmethod
     def get_required_params():
         return {}
@@ -68,7 +68,7 @@ class Decoder:
             return self._decode(self._cast_types(input_dict))
 
     def _cast_types(self, input_dict):
-        return cast_types(input_dict, self.params["dtype"]
+        return cast_types(input_dict, self.params["dtype"])
 
     def _decode(self, input_dict):
         pass

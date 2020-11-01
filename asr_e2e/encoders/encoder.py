@@ -61,16 +61,16 @@ class Encoder:
             if self._params["dtype"] == "mixed":
                 self._params["dtype"]  =tf.float16
 
-            if "initializer" in self.params:
-                init_dict = self.params.get("initializer_params", {})
-                initializer = self.params["initializer"](**init_dict)
-            else:
-                initializer = None
+        if "initializer" in self.params:
+            init_dict = self.params.get("initializer_params", {})
+            initializer = self.params["initializer"](**init_dict)
+        else:
+            initializer = None
 
-            self._compiled = True
-            
-            witf tf.variable_scope(self._name, initializer = initializer, dtype = self.params["dtype"]):
-                return self._encode(self._cast_types(input_dict))
+        self._compiled = True
+        
+        witf tf.variable_scope(self._name, initializer = initializer, dtype = self.params["dtype"]):
+            return self._encode(self._cast_types(input_dict))
 
     def _cast_types(self, input_dict):
         """
