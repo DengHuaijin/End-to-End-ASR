@@ -14,6 +14,9 @@
 
 ### Decoder
 
+### Speech2Text
+plot attention暂时不支持
+
 ## **class Loss**
 
 ### CrossEntropyLoss
