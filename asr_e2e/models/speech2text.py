@@ -16,6 +16,9 @@ from .encoder_decoder import EncoderDecoderModel
 import pickle
 
 def sparse_tensor_to_chars(tensor, idx2char):
+    """
+    2维稀疏矩阵 每一行对应一个word，其中每个非零元素对应1个char
+    """
     text = [""] * tensor.dense_shape[0]
     for idx_tuple, value in zip(tensor.indices, tensor.values):
         text[idx_tuple[0]] += idx2char[value]
@@ -78,5 +81,141 @@ def plot_attention(alignments, pred_text, encoder_len, training_step):
     return summary
 
 class Speech2Text(EncoderDecoderModel):
+
     def _create_decoder(self):
         data_layer = self.get_data_layer()
+        self.params["decoder_params"]["tgt_vocab_size"] = (data_layer.params["tgt_vocab_size"])
+
+        self.dump_outputs = self.params["decoder_params"].get("infer_logits_to_pickle", False)
+
+        self.is_bpe = data_layer.params.get("bpe", False)
+        self.tensor_to_chars = sparse_tensor_to_chars
+        self.autoaregressive = data_layer.params.get("autoaregressive", False)
+        if self.autoaregressive:
+            self.params["decoder_params"]["GO_SYMBOL"] = data_layer.start_index
+            self.params["decoder_params"]["END_SYMBOM"] = data_layer.end_index
+            self.tensor_to_chars = dense_tensor_to_chars
+            self.tensor_to_chars_params["startindex"] = data_layer.start_index
+            self.tensor_to_chars_params["endindex"] = data_layer.end_index
+
+        return super(Speech2Text, self)._create_decoder()
+
+    def _create_loss(self):
+        if self.get_data_layer().params.get("autoaregressive", False):
+            self.params["loss_params"]["batch_size"] = self.params["batch_size_per_gpu"]
+            self.params["loss_params"]["tgt_vocab_size"] = (self.get_data_layer().params["tgt_vocab_size"])
+
+        return super(Speech2Text,self)._create_loss()
+
+    def _build_forward_pass_graph(self, input_tensors, gpu_id = 0):
+        if not isinstance(input_tensors, dict):
+            raise ValueError("Input tensors should be dict containing 'source_tensors' key")
+
+        if not isinstance(input_tensors["source_tensors"], list):
+            raise ValueError("source tensors should be a list")
+
+        source_tensors = input_tensors["source_tensors"]
+        if self.mode == "train" or self.mode == "eval":
+            if "target_tensors" not in input_tensors:
+                raise ValueError("Input tensors  should contain 'target_tensors' key in train and eval mode")
+
+            if not isinstance(input_tensors["target_tensors"], list):
+                raise ValueError("target_tensors should be a list")
+
+            target_tensors = input_tensors["target_tensors"]
+
+        with tf.variable_scope("ForwardPass"):
+            encoder_input = {"source_tensors": source_tensors}
+            encoder_output = self.encoder.encode(input_dict = encoder_input)
+
+            decoder_input = {"encoder_output": encoder_output}
+            if self.mode == "train" or self.mode == "eval":
+                decoder_input["target_tensors"] = target_tensors
+
+            decoder_output = self.decoder.decode(input_dict = decoder_input)
+            model_outputs = decoder_output.get("outputs", None)
+
+            if self.mode == "train" or self.mode == "eval":
+                with tf.variable_scope("Loss"):
+                    loss_input_dict = {
+                            "decoder_output": decoder_output,
+                            "target_tensors": target_tensors}
+                    loss = self.loss_computator.compute_loss(loss_input_dict)
+            else:
+                deco_print("Inference Mode. Loss part of graph isn't built.")
+                loss = None
+        
+        return loss, model_outputs
+
+    def print_logts(self, input_values, output_values, training_step):
+
+        y, len_y = input_values["target_tensors"]
+        decoded_sequence = output_values
+        y_one_sample = y[0]
+        len_y_one_sample = len_y[0]
+        decoded_sequence_one_batch = decoded_sequence[0]
+
+        if self.is_bpe:
+            dec_list = sparse_tensor_to_chars_bpe(decoded_sequence_one_batch)[0]
+            true_text = self.get_data_layer().sp.DecodeIds(y_one_sample[:len_y_one_sample].tolist())
+            pred_text = self.get_data_layer().sp.DecodeIds(dec_list)
+
+        else:
+            true_text = "".join(map(self.get_data_layer().params["idx2char"].get, y_one_sample[:len_y_one_sample]))
+            pred_text = "".join(self.tensor_to_chars(decoded_sequence_one_batch, 
+                                                     self.get_data_layer().params["idx2char"],
+                                                     **self.tensor_to_char_params)[0])
+
+        sample_wer = levenshtein(true_text.split(), pred_text.split()) / len(true_text.split())
+
+        self.autoaregressive = self.get_data_layer().params.get("autoaregressive", False)
+        self.plot_attention = False
+
+        deco_print("Sample WER: {:.4f}".format(sample_wer), offset = 4)
+        deco_print("Sample target:    " + true_text, offset = 4)
+        deco_print("Sample prediction:    " + pred_text, offset  =4)
+
+        return {"Sample WER": sample_wer}
+    
+    def finalize_evaluation(self, results_per_batch, training_step = None):
+        total_word_lev = 0.0
+        total_word_count = 0.0
+
+        for word_lev, word_count in results_per_batch:
+            total_word_lev += word_lev
+            total_word_count += word_count
+
+        total_wer = 1.0 * total_word_lev / total_word_count
+        deco_print("Validation WER: {:.4f}".format(total_wer), offset = 4)
+
+        return {"Eval WER": total_wer}
+
+    def evaluate(self, input_values, output_values):
+        total_word_lev = 0.0
+        total_word_count = 0.0
+
+        decoded_sequence = output_values[0]
+
+        if self.is_bpe:
+            decoded_text = sparse_tensor_to_chars_bpe(decoded_sequence)
+        else:
+            decoded_text = self.tensor_to_chars(
+                    decoded_sequence,
+                    self,get_data_layer().params["idx2char"],
+                    **self.tensor_to_chars_params)
+
+        batch_size = input_values["source_tensors"][0].shape[0]
+        for sample_id in range(batch_size):
+            y = input_values["target_tensors"][0][sample_id]
+            len_y = input_values["target_tensors"][1][sample_id]
+        
+            true_text = "".join(map(self.get_data_layer().params["idx2char"].get, y[:len_y]))
+            pred_text = "".join(decoded_text[sample_di])
+
+            if self.get_data_layer().params.get("autoaregressive", False):
+                true_text = true_text[:-4]
+
+            total_word_lev += levenshtein(true_text.spilt(), pred_text.spilt())
+            total_word_count += len(true_text.split())
+        
+        return total_word_lev, total_word_count
