@@ -25,3 +25,6 @@ plot attention暂时不支持
 
 ## **class Optimizer**
 无视on_horovod的判断条件,直接调用optimizer.apply_gradients()
+
+## train
+取消对hook的支持

@@ -278,126 +278,13 @@ def cast_type(input_dict, dtype):
         cat_input_dict[key] = input_dict[key]
     return cast_input_dict
 
-def mask_nans(x):
-
-    x_zeros = tf.zeros_like(x)
-    x_mask = tf.is_finite(x)
-    y = tf.where(x_mask, x_zeros)
-    return y
-
-def iterate_data(model, sess, compute_loss, mode, verbose, num_steps = None):
-    total_time = 0.0
-    results_per_batch = []
-
-    size_defined = model.get_data_layer().get_size_in_samples() is not None
-    if size_defined:
-        dl_sizes = []
-
-    if compute_loss:
-        total_loss = 0.0
-
-    total_samples = []
-    fetches = []
-
-    for worker_id in range(model.num_gpus):
-        cur_fetches = [
-                model.get_data_layer(worker_id).input_tensors,
-                model.get_output_tensors(worker_id)]
-
-        if compute_loss:
-            cur_fetches.append(model.eval_losses[worker_id])
-        if size_defined:
-            dk_sizes.append(model.get_data_layer(worker_id).get_size_in_samples)
-        try:
-            total_objects = 0.0
-            cur_fetches.append(model.get_num_objects_per_step(worker_id))
-        except NotImplementedError:
-            total_objects = None
-            deco_print("WARNING: Can't compute number of objects per step, since train model does not define get_num_objects_per_step method")
-
-        fetches.append(cur_fetches)
-        total_samples.append(0.0)
-    
-    sess.run([model.get_data_layer(i).iterator.initializer for i in range(model.num_gpus)])
-    
-    step = 0
-    processed_batches = 0
-    if verbose:
-        ending = ""
-
-    while True:
-        fetches_vals = {}
-        if size_defined:
-            fetches_to_run = {}
-            for worker_id in range(model.num_gpus):
-                if total_samples[worker_id] < dl_sizes[worker_id]:
-                    fetches_to_run[worker_id] = fetches[worker_id]
-            fetches_vals = sess.run(fetches_to_run)
-        else:
-            for worker_id, one_fetch in enumerate(fetches):
-                try:
-                    fetches_vals[worker_id] = sess.run(one_fetch)
-                except tf.errors.OutOfRangeError:
-                    continue
-        for worker_id, fetches_val in fetches_vals.items():
-            if compute_loss:
-                inputs, outputs, loss = fetches_val[:3]
-            else:
-                inputs, outputs = fetches_val[:2]
-
-            if total_objects is not None:
-                total_objects += np.sum(fetches_val[-1])
-
-            batch_size = inputs["source_tensors"][0].shape[0]
-            total_samples[worker_id] += batch_size
-
-            if size_defined:
-                if total_samples[worker_id] > dl_sizes[worker_id]:
-                    last_batch_size = dl_sizes[worker_id] % batch_size
-                    for key, value in inputs.items():
-                        inputs[key] = model.clip_last_batch(value, last_batch_size)
-                    outputs = model.clip_last_batch(outputs, last_batch_size)
-
-            processed_batches += 1
-
-            if compute_loss:
-                total_loss += loss * batch_size
-
-            if mode == "eval":
-                results_per_batch.append(model.evaluate(inputs, outputs))
-            else:
-                raise ValueError("Unknown mode: {}".format(mode))
-        
-        if verbose:
-            if size_defined:
-                data_size = int(np.sum(np.ceil(np.array(dl_sizes) / batch_size)))
-                if step == 0 or len(fetches_vals) == 0 or (data_size > 10 and processed_batches % (data_size // 10) == 0):
-                    deco_print("Processed {}/{} batches.{}"format(processed_batches, data_size, ending))
-                else:
-                    deco_print("Processed {} batches{}.".format(processed_batches, ending), end = "\r")
-
-        if len(fetches_vals) == 0:
-            break
-        step += 1
-
-        if num_steps is not None and step > num_steps:
-            break
-    if compute_loss:
-        return results_per_batch, total_loss, np.sum(total_samples)
-    else:
-        return results_per_batch
-        
-
-def collect_if_horovod(value, hvd, mode = "sum"):
-    return value
-
 def get_results_for_epoch(model, sess, compute_loss, mode, verbose = False):
     
     if compute_loss:
         results_per_batch, total_loss, total_samples = iterate_data(
                 model, sess, compute_loss, mode, verbose)
     else:
-        results_per_batch = iterate_data(
+        result_per_batch = iterate_data(
                 model, sess, compute_loss, mode, verbose)
 
     if compute_loss:
