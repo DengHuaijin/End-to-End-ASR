@@ -403,3 +403,15 @@ def get_results_for_epoch(model, sess, compute_loss, mode, verbose = False):
     if compute_loss:
         total_samples = collect_if_horovod(total_samples, None, "sum")
         total_loss = collect_if_horovod(total_loss, None, "sum")
+    results_per_batch = collect_if_horovod(results_per_batch, None, None)
+
+    if results_per_batch is None:
+        if compute_loss:
+            return None, None
+        else:
+            return None
+
+    if compute_loss:
+        return results_per_batch, total_loss / total_samples
+    else:
+        return results_per_batch
