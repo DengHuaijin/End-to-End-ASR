@@ -157,19 +157,85 @@ class Speech2TextDataLayer(DataLayer):
             Builds data processing graph using tf.data API
             """
             if self.params["mode"] != "infer":
+                """
+                The given tensors are sliced along their first dimension.
+                Remove the 1st dimension of each tensor and use it as the dataset dimension.
+                
+                self._files的数据格式如下所示：
+                wav_filename    transcript(不包含key)
+
+                0000.wav        transcript1
+                0001.wav        transcript2
+                0002.wav        transcript3
+                ...
+
+                files.shape == (28539,2)
+                用from_tensor_slices处理之后，根据第一个维度对数据进行切分，即切分为28539个元素，
+                每个元素维度为2，即(2,)
+
+                """
                 self._dataset = tf.data.Dataset.from_tensor_slices(self._files)
 
                 if self.params["shuffle"]:
                     self._dataset = self.dataset.shuffle(self._size)
                 self._dataset = self._dataset.repeat()
-                self._dataset = self._dataset.prefetch(tf.contrib.data.AUTOUNE)
+                self._dataset = self._dataset.prefetch(tf.contrib.data.AUTOTUNE)
                 self._dataset = self._dataset.map(
                         lambda line: tf.py_func(
                             self._parse_audio_transcript_element,
                             [line],
                             [self.params["dtype"], tf.int32, tf.int32, tf.int32, tf.float32],
-                            stateful = False), num_parallel = 8)
+                            stateful = False), num_parallel_calls = 8)
+                
+                """
+                过滤时长小于max_duration的数据，被self._parse_audio_transcript_element处理后的
+                dataset结构发生变化， x x_len y y_len duration
+                """
                 if self.params["max_duration"] > 0:
                     self._dataset = self._dataset.filter(
                             lambda x, x_len, y, y_len, duration:
                             tf.less_equal(duration, self.params["max_duration"]))
+                
+                if self.params["min_duration"] > 0:
+                    self._dataset = self._dataset.filter(
+                            lambda x, x_len, y, y_len, duration:
+                            tf.greater_equal(duration, self.params["max_duration"]))
+
+                self._dataset = self._dataset.map(
+                        lambda x, x_len, y, y_len, duration:
+                        [x, x_len, y, y_len],
+                        num_parallel_calls = 8)
+
+                self._dataset = self._dataset.padded_batch(
+                        self.params["batch_size"],
+                        padded_shapes = ([None, self.params["num_audio_features"]], 1, [None], 1),
+                        padding_values = (tf.cast(0, self.params["dtype"]), 0, self.target_pad_value, 0))
+
+            self._iterator = self._dataset.prefetch(tf.contrib.data.AUTOTUNE).make_initilizable_iterator()
+
+            if self.params["mode"] != "infer":
+                x, x_length, y, y_length = self._iterator.get_next()
+                y.set_shape([self.params["batch_size"], None])
+                y_length = tf.reshape(y_length, [self.params["batch_size"]])
+
+            x.set_shape([self.params["batch_size"], None, self.params["num_audio_features"]])
+            x_length = tf.reshape(x_length, [self.params["batch_size"]])
+
+            pad_to = self.params.get("pad_to", 8)
+
+            if pad_to > 0 and self.params.get("backend") == "librosa":
+                num_pad = tf.mod(pad_to - tf.mod(tf.reduce_max(x_length), pad_to), pad_to)
+                x = tf.pad(x, [[0,0], [0, num_pad], [0,0]])
+
+            self._input_tensors = {}
+            self._input_tensors["source_tensors"] = [x, x_length]
+
+            self._input_tensors["target_tensors"] = [y, y_length]
+
+    def _parse_audio_transcript_element(self, element):
+        """
+        Parse tf.data element from TextLineDataset into audio and text
+
+        element: tf.data element from TextLineDataset
+
+        """
