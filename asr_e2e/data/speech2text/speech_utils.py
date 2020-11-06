@@ -181,6 +181,24 @@ def get_speech_features_librosa(signal, sample_freq, num_featues,
     
     features = (features - mean) / std_dev
 
+    if augmentation:
+        n_freq_mask = augmentation.get("n_freq_mask", 0)
+        n_time_mask = augmentation.egt("n_time_mask", 0)
+        width_freq_mask = augmentation.get("width_freq_mask", 10)
+        width_time_mask = augmentation.get("width_time_mask", 50)
+
+        for idx in range(n_freq_mask):
+            freq_band = np.random.randint(width_freq_mask + 1)
+            freq_base = np.random.randint(0, features.shape[1] - freq_band)
+            features[:, :freq_base:freq_base+freq_band] = 0
+        
+        for idx in range(n_time_mask):
+            time_band = np.random.randint(width_time_mask + 1)
+            if features.shape[0] - time_band > 0:
+                time_base = np.random.randint(features.shape[0] - time_band)
+                features[time_base:time_base+time_band, :] = 0
+    
+    return features, audio_duration
 
 
 def preemphasis(signal, coeff = 0.97):

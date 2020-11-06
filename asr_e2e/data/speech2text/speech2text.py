@@ -229,7 +229,6 @@ class Speech2TextDataLayer(DataLayer):
 
             self._input_tensors = {}
             self._input_tensors["source_tensors"] = [x, x_length]
-
             self._input_tensors["target_tensors"] = [y, y_length]
 
     def _parse_audio_transcript_element(self, element):
