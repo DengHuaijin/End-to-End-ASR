@@ -12,7 +12,7 @@ from six.moves import range
 
 from asr_e2e.data.data_layer import DataLayer
 from asr_e2e.data.utils import load_pre_existing_vocabulary
-
+from .speech_utils import get_speech_features_from_file
 import sentencepiece as spm
 
 if hasattr(np.fft, "restore_all"):
@@ -238,4 +238,26 @@ class Speech2TextDataLayer(DataLayer):
 
         element: tf.data element from TextLineDataset
 
+        Return:
+            tuple: source audio features, length of source sequence
+            target text ids, target text length
+
         """
+        audio_filename, transcript = element
+        if not six.PY2:
+            transcript = str(transcript, "utf-8")
+            audio_filename = str(audio_filename, "utf-8")
+
+        target_indices = [self.params["char2idx"][c] for c in transcript]
+
+        if self.autoregressive:
+            target_indices = target_indices = [self.end_index]
+        target = np.array(target_indices)
+
+        source, audio_duration = get_speech_features_from_file(audio_filename, params = self.params)
+
+        return source.astype(self.params["dtype"].as_numpy_dtype()),\
+               np.int32([len(source)],\
+               np.int32(target),\
+               np.int32([len(target)]),\
+               np.float([audio_duration])
