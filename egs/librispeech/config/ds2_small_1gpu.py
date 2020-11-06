@@ -11,15 +11,16 @@ base_model = Speech2Text
 base_params = {
     "random_seed": 0,
     "max_steps": 1000,
+    "num_epochs": 12,
     
-    "num_gpus": 12,
-    "batch_size_per_gpu": 8,
+    "num_gpus": 1,
+    "batch_size_per_gpu": 32,
     
     "save_summaries_steps": 100,
     "print_loss_steps": 10,
     "print_samples_steps": 5000,
     "eval_steps": 5000,
-    "save_checkpoint_steps": 5000,
+    "save_checkpoint_steps": 1000,
     "logdir": "ds2_log",
 
     "optimizer": "Adam",
