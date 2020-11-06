@@ -33,6 +33,9 @@ plot attention暂时不支持
 
 ### speech_utils
 特征文件存储格式：h5py. npy
+
 backend: librosa
+
 支持数据增强augmentation，即语音速率(采样率)的变化
+
 语音特征类型：mfcc, spectrogram, logfbank
