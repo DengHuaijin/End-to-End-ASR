@@ -3,6 +3,8 @@
 
 2020/10/23 从model的基类开始写起，开发中...
 
+2020/11/08 模型的训练和评估框架基本实现
+
 ## **class Model**
 初始版本不需要interence模式 horovod模式 以及interactive模式，后面有需求再添加
 
