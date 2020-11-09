@@ -1,11 +1,53 @@
 from __future__ import absolute_import
 from __future__ import division
-from __futrue__ import print_function
+from __future__ import print_function
 
 import argparse
 import runpy
 import ast
 import copy
+import os
+
+import numpy as np
+import six
+from six import string_types
+from six.moves import range
+import tensorflow as tf
+
+class Logger(object):
+    
+    def __init__(self, stream, log_file):
+        self.stream = stream
+        self.log = log_file
+
+    def write(self, msg):
+        self.stream.write(msg)
+        self.log.write(msg)
+
+    def flush(self):
+        self.stream.flush()
+        self.log.flush()
+
+def create_log_dir(args, base_config):
+
+    logdir = base_config["logdir"]
+    if not os.path.exists(logdir):
+        os.makedirs(logdir)
+
+    tm_suf = datatime.datatime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    shutil.copy(args,config_file, os.path.join(logdir, "config_{}.py".format(tm_suf)))
+
+    with open(os.path.join(logdir, "cmd-args_{}.log".format(tm_suf)), "w"):
+        f.write(" ".join(sys.argv))
+
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    stdout_log = open(os.path.join(logdir, "stdout_{}.log".format(tm_suf)), "a", 1)
+    stderr_log = open(os.path.join(logdir, "stderr_{}.log".format(tm_suf)), "a", 1)
+    sys.stdout = Logger(sys.stdout, stdout_log)
+    sys.stderr = Logger(sys.stderr, stderr_log)
+
+    return old_stdout, old_stderr, stdout_log, stderr_log
 
 def create_model(args, base_config, config_module, base_model, checkpoint = None):
     
@@ -35,12 +77,15 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
         eval_model = base_model(params = eval_config, mode = "eval")
         eval_model.complie()
         model = (train_model, eval_model)
-    elif args.mode = "train":
+    
+    elif args.mode == "train":
         model = base_model(params = train_config, mode = "train")
         model.complie()
-    elif args.mode = "eval":
+    
+    elif args.mode == "eval":
         model = base_model(params = eval_config, mode = "eval")
         model.complie(force_var_reuse = False)
+    
     else:
         model = base_model(params = infer_config, mode = args.mode)
         model.complie(checkpoint = checkpoint)
@@ -50,6 +95,7 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
 
 def flatten_dict(dct):
     flat_dict = {}
+    # 考虑原字典value也是字典的情况
     for key, value in dct.items():
         if isinstance(value, (int,float,string_types,bool)):
             flat_dict.update({key:value})
@@ -59,9 +105,21 @@ def flatten_dict(dct):
     return flat_dict
 
 def nest_dict(flat_dict):
+    """
+    input flat_dict:
+    {
+        "optimizer": "Adam",
+        "lr_policy_params/learning_rate": 0.0001
+    }
+    return nst_dict:
+    {
+        "optimizer": "Adam",
+        "lr_policy_params": {"learning_rate": 0.0001}
+    }
+    """
     nst_dict = {}
     for key,value in flat_dict.items():
-        nest_keys = k.split("/")
+        nest_keys = key.split("/")
         cur_dict = nst_dict
         for i in range(len(nest_keys) - 1):
             if nest_keys[i] not in cur_dict:
@@ -90,30 +148,34 @@ def get_base_config(args):
     
     parser.add_argument("--config_file", required = True, help = "Path to the config file")
     
-    parser.add_argument("--mode", default = "train", help = "train, eval, train_eval, infer")
+    parser.add_argument("--mode", default = "train", help = "train, eval, train_eval")
 
-    parser.add_argument("--infer_output_file", default = "infer-output.txt", help = "Path to the output of inference")
-
+    # parser.add_argument("--infer_output_file", default = "infer-output.txt", help = "Path to the output of inference")
+    # store_true 默认为False, 如果在参数中出现则设置为True
     parser.add_argument("--continue_learning", action = "store_true")
 
     parser.add_argument("--enable_logs", dest = "enable_logs", action = "store_true")
 
-    args, unknown = parse.parse_know_args(args)
+    args, unknown = parser.parse_know_args(args)
 
-    if args.mode not in ["train", "eval", "infer", "train_eval"]:
-        raise ValueError("Mode has to be one of 'train', 'train_eval', 'eval', 'infer'")
-    
+    if args.mode not in ["train", "eval"]:
+        raise ValueError("Mode has to be one of 'train', 'eval'")
+
+    # run_path返回一个top-level的字典
     config_module = runpy.run_path(args.config_file, init_globals = {'tf':tf})
 
     base_config = config_module.get('base_params', None)
     if base_config is None:
-        raise ValueError("base_config dictionary has to be defined in the config file")
-
+        raise ValueError("base_params has to be defined in the config file")
+    
+    # Speech2Text 这里返回一个class
     base_model = config_module.get('base_model', None)
     if base_model is None:
-        raise ValueError("base_config class has to be defined in the config file")
-
+        raise ValueError("base_model class has to be defined in the config file")
+    
+    # 读完config_file之后，有一些之前的参数可能会被重写
     parser_unk = argparse.ArgumentParser()
+    
     for pm, value in flatten_dict(base_config).items():
         if type(value) == int or type(value) == float or isinstance(value, string_types):
             parser_unk.add_argument("--" + pm, default = value, type = type(value))
@@ -159,25 +221,32 @@ def check_logdir(args, base_config, restore_best_checkpoint=False):
         else:
             ckpt_dir = logdir
 
-        if args.mode == "train" or args.mode == "train_eval":
+        if args.mode == "train":
+            
             if os.path.isfile(logdir):
                 raise IOError("There is a file with the same name as logdir")
+            
             if os.path.isdir(logdir) and os.listdir(logdir) != []:
                 if not args.continue_learning:
                     raise IOError("Log directory is not empty")
+                
                 checkpoint = tf.train.latest_checkpoint(ckpt_dir)
                 if checkpoint is None:
                     raise IOError("There is no valid Tensorflow checkpoint in the {} directory. Can't load model.".format(ckpt_dir))
             else:
                 if args.continue_learning:
                     raise IOError("The log directory is empty or does not exist.")
-        elif (args.mode == "infer") or (args.mode = "eval"):
+        
+        elif args.mode == "eval":
+            
             if os.path.isdir(logdir) and os.path.listdir(logdir) != []:
-                best_ckpt_dir = os.path.join(ckpt_dir, 'besat_models')
+                best_ckpt_dir = os.path.join(ckpt_dir, 'best_models')
+                
                 if restore_best_checkpoint and os.path.isdir(best_ckpt_dir):
                     deco_print("Restoring from the best checkpoint")
                     checkpoint = tf.train.latest_checkpoint(best_ckpt_dir)
                     ckpt_dir = best_ckpt_dir
+                
                 else:
                     deco_print("Restoring from the latest checkpoint")
                     checkpoint = tf.train.latest_checkpoint(ckpt_dir)
@@ -372,7 +441,7 @@ def iterate_data(model, sess, compute_loss, mode, verbose, num_steps = None):
             if size_defined:
                 data_size = int(np.sum(np.ceil(np.array(dl_sizes) / batch_size)))
                 if step == 0 or len(fetches_vals) == 0 or (data_size > 10 and processed_batches % (data_size // 10) == 0):
-                    deco_print("Processed {}/{} batches.{}"format(processed_batches, data_size, ending))
+                    deco_print("Processed {}/{} batches.{}".format(processed_batches, data_size, ending))
                 else:
                     deco_print("Processed {} batches{}.".format(processed_batches, ending), end = "\r")
 

@@ -13,7 +13,10 @@ from asr_e2e.utils.funcs import train, evaluate
 
 def main():
 
-    # Parse args and create config 
+    """
+    Parse args and create config 
+    e.g. python3 run.py --mode=train --config_file=config/ds2_small_1gpu.py
+    """
     args, base_config, base_model, config_module = get_base_config(sys.argv[1:])
 
     load_model = base_config.get('load_model', None)
