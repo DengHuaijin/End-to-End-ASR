@@ -1,12 +1,4 @@
 import tensorflow as tf
-from asr_e2e.models import Speech2Text
-from asr_e2e.encoders import DeepSpeech2Encoder
-from asr_e2e.decoders import FullyConnectedCTCDecoder
-from asr_e2e.data import Seepch2TextDataLayer
-from asr_e2e.losses import CTCLoss
-from asr_e2e.optimizers.lr_polices import exp_decay
-
-base_model = Speech2Text
 
 base_params = {
     "random_seed": 0,
@@ -21,11 +13,11 @@ base_params = {
     "print_samples_steps": 5000,
     "eval_steps": 5000,
     "save_checkpoint_steps": 1000,
-    "logdir": "egs/librispeech/ds2_log",
+    "logdir": "ds2_log",
 
     "optimizer": "Adam",
     "optimizer_params": {},
-    "lr_policy": exp_decay,
+    "lr_policy": "exp_decay",
     "lr_policy_params": {
         "learning_rate": 0.0001,
         "begin_decay_at": 0,
@@ -40,9 +32,9 @@ base_params = {
     "summaries": ['learning_rate', 'variables', 'gradients', 'larc_summaries',
                   'varibale_norm', 'gradients_norm', 'gloabl_gradient_norm'],
 
-    "initializer": tf.contrib.layers.xavier_initilaizer,
+    "initializer": tf.contrib.layers.xavier_initializer,
     
-    "encoder": DeepSpeech2Encoder,
+    "encoder": "DeepSpeech2Encoder",
     "encoder_params":{
         "conv_layers":[
             {
@@ -73,7 +65,7 @@ base_params = {
         "activation_fn": tf.nn.relu,
         },
 
-    "decoder": FullyConnectedCTCDecoder,
+    "decoder": "FullyConnectedCTCDecoder",
     "decoder_params": {
         "use_language_model" : False,
 
@@ -86,12 +78,12 @@ base_params = {
         "lm_path": "language_model/4-gram.binary",
         "alphabet_config_path": "vocab.txt",
             },
-    "loss": CTCLoss,
+    "loss": "CTCLoss",
     "loss_params": {},
 }
 
 train_params = {
-        "data_layer": Speech2TextDataLayer,
+        "data_layer": "Speech2TextDataLayer",
         "data_layer_params": {
             "num_audio_features": 96,
             "input_type": "spectrogram",
@@ -103,21 +95,21 @@ train_params = {
 
             "vocab_file": "vocab.txt",
             "dataset_files": [
-                "egs/librispeech/data/librispeech/librivox-train-clean-100.csv",
-                "egs/librispeech/data/librispeech/librivox-train-clean-360.csv"
+                "data/librispeech/librivox-train-clean-100.csv",
+                "data/librispeech/librivox-train-clean-360.csv"
                 ],
             "shuffle": True,
             }
         }
 
 eval_params = {
-        "data_layer": Speech2TextDataLayer,
+        "data_layer": "Speech2TextDataLayer",
         "data_layer_params": {
             "num_audio_features": 96,
             "input_type": "spectrogram",
             "vocab_file": "vocab.txt",
             "dataset_files": [
-                "egs/librispeech/data/librispeech/librivox-dev-clean.csv",
+                "data/librispeech/librivox-dev-clean.csv",
                 ],
             "shuffle": False
             }
