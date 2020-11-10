@@ -121,7 +121,7 @@ class Speech2TextDataLayer(DataLayer):
                 n_mels = self.params["num_audio_features"],
                 fmin = 0,
                 fmax = int(self.params["sample_freq"] / 2))
-       self.params["mel_basis"] = mel_basis
+        self.params["mel_basis"] = mel_basis
 
         if "n_freq_mask" in self.params.get("augmentation", {}):
             width_freq_mask = self.params["augmentation"].get("width_freq_mask", 10)
@@ -185,7 +185,7 @@ class Speech2TextDataLayer(DataLayer):
                 self._dataset = tf.data.Dataset.from_tensor_slices(self._files)
 
                 if self.params["shuffle"]:
-                    self._dataset = self.dataset.shuffle(self._size)
+                    self._dataset = self._dataset.shuffle(self._size)
                 self._dataset = self._dataset.repeat()
                 self._dataset = self._dataset.prefetch(tf.contrib.data.AUTOTUNE)
                 self._dataset = self._dataset.map(
@@ -268,3 +268,6 @@ class Speech2TextDataLayer(DataLayer):
                np.int32(target),\
                np.int32([len(target)]),\
                np.float([audio_duration])
+
+    def get_size_in_samples(self):
+        return len(self._files)
