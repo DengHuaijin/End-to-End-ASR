@@ -6,14 +6,16 @@ import math
 import h5py
 
 import numpy as np
-import scipy.io.wavfiles as wave
+import scipy.io.wavfile as wave
+import resampy as rs
+import librosa
 
 WINDOW_FNS = {"hanning": np.hanning, "hamming": np.hamming, "none": None}
 
-class PreprocessOnTheFlyException(Excpetion):
+class PreprocessOnTheFlyException(Exception):
     pass
 
-class RegenerateCacheException(Excpetion):
+class RegenerateCacheException(Exception):
     pass
 
 def load_features(path, data_format):
@@ -54,9 +56,9 @@ def get_preprocessed_data_path(filename, params):
     def fix_kv(text):
         text = str(text)
         text = text.replace("speed_perturbation_ratio", "sp") \
-                   .replace("noise_level_min", "nlmin") \ 
-                   .replace("noise_level_max", "nlmax") \ 
-                   .replace("add_derivatives", "d") \ 
+                   .replace("noise_level_min", "nlmin") \
+                   .replace("noise_level_max", "nlmax") \
+                   .replace("add_derivatives", "d") \
                    .replace("add_second_derivatives", "dd")
         return text
 
@@ -75,7 +77,7 @@ def get_preprocessed_data_path(filename, params):
 
 def get_speech_features(signal, sample_freq, params):
     
-    backend = params.get("backend", "psf")
+    backend = params.get("backend", "librosa")
 
     features_type = params.get("input_type", "spectrogram")
     num_features = params["num_audio_features"]
@@ -103,7 +105,7 @@ def get_speech_features(signal, sample_freq, params):
 
     return features, duration
 
-def get_speech_features_librosa(signal, sample_freq, num_featues,
+def get_speech_features_librosa(signal, sample_freq, num_features,
                                 features_type = "spectrogram",
                                 window_size = 20e-3,
                                 window_stride = 10e-3,
@@ -124,24 +126,24 @@ def get_speech_features_librosa(signal, sample_freq, num_featues,
     
     audio_duration = len(signal) * 1 / sample_freq
 
-    n_windiw_size = int(sample_freq * window_size)
+    n_window_size = int(sample_freq * window_size)
     n_window_stride = int(sample_freq * window_stride)
-    nuhm_fft = num_fft or 2**math.ceil(math.log2(window_size * sample_freq))
+    num_fft = num_fft or 2**math.ceil(math.log2(window_size * sample_freq))
 
     if dither > 0:
         signal += dither * np.random.randn(*signal.shape)
 
     if features_type == "spectrogram":
         powspec = np.square(np.abs(librosa.core.stft(
-            signal, n_fft = n_windiw_size,
+            signal, n_fft = n_window_size,
             hop_length = n_window_stride,
-            win_length = n_windiw_size,
+            win_length = n_window_size,
             center = True,
             window = window_fn)))
         powspec[powspec <= 1e-30] = 1e-30
-        featuers = 10 * np.log10(powspec.T)
+        features = 10 * np.log10(powspec.T)
 
-        assert num_features <= n_windiw_size // 2 + 1, "num_features for spectrogram should be <= n_window_size // 2 + 1"
+        assert num_features <= n_window_size // 2 + 1, "num_features for spectrogram should be <= n_window_size // 2 + 1"
         # cut high freq part
         features = features[:, :num_features]
     
@@ -150,8 +152,8 @@ def get_speech_features_librosa(signal, sample_freq, num_featues,
         S = np.square(
                 np.abs(
                     librosa.core.stft(signal, n_fft = num_fft,
-                                      hop_length = int(window_stride * sample_freq),
-                                      win_length = int(window_size * sample_freq),
+                                      hop_length = n_window_stride,
+                                      win_length = n_window_size,
                                       center = True, window = window_fn)))
         
         features = librosa.feature.mfcc(sr = sample_freq, S = S, n_mfcc = num_features, n_mels = 2*num_features).T
@@ -204,7 +206,7 @@ def get_speech_features_librosa(signal, sample_freq, num_featues,
 def preemphasis(signal, coeff = 0.97):
     return np.append(signal[0], signal[1:] - coeff * signal[:-1])
 
-def normalize_signal(signal_float, gain = None):
+def normalize_signal(signal, gain = None):
     """
     Normalize to [-1, 1]
     """
@@ -259,8 +261,8 @@ def get_speech_features_from_file(filename, params):
 
         if sample_freq != params["sample_freq"]:
             raise ValueError(
-                    "The sampling frequency set in params {} does not match
-                    the frequency {} read from file {}".format(params["sample_freq"], sample_freq, filename))
+                    "The sampling frequency set in params {} does not match"
+                    " the frequency {} read from file {}".format(params["sample_freq"], sample_freq, filename))
 
         features, duration = get_speech_features(signal, sample_freq, params)
 
@@ -269,8 +271,8 @@ def get_speech_features_from_file(filename, params):
 
         if sample_freq != params["sample_freq"]:
             raise ValueError(
-                    "The sampling frequency set in params {} does not match
-                    the frequency {} read from file {}".format(params["sample_freq"], sample_freq, filename))
+                    "The sampling frequency set in params {} does not match"
+                    " the frequency {} read from file {}".format(params["sample_freq"], sample_freq, filename))
 
         features, duration = get_speech_features(signal, sample_freq, params)
         preprocessed_data_path = get_preprocessed_data_path(filename, params)
