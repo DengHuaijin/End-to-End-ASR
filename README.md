@@ -33,6 +33,8 @@ plot attention暂时不支持
 
 ## Speech2TextDataLayer
 
+data_split() 在train模式下应该对数据按GPU数量进行分割，反之在eval模式下不分割
+
 ### speech_utils
 特征文件存储格式：h5py. npy
 

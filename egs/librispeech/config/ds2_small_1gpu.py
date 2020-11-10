@@ -10,7 +10,6 @@ base_model = Speech2Text
 
 base_params = {
     "random_seed": 0,
-    "max_steps": 1000,
     "num_epochs": 12,
     
     "num_gpus": 1,

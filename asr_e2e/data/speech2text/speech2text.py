@@ -68,7 +68,7 @@ class Speech2TextDataLayer(DataLayer):
             self.params["char2idx"] = load_pre_existing_vocabulary(self.params["vocab_file"], read_chars = True)
 
             if not self.autoregressive:
-                # add one for blamk token
+                # add one for blank token
                 self.params["tgt_vocab_size"] = len(self.params["char2idx"]) + 1
             else:
                 num_chars_orig = len(self.params["char2idx"])
@@ -85,6 +85,7 @@ class Speech2TextDataLayer(DataLayer):
         self._files = None
         
         for csv in params["dataset_files"]:
+            
             files = pd.read_csv(csv, encoding = "utf-8")
             if self._files = None:
                 self._files = files
@@ -137,6 +138,13 @@ class Speech2TextDataLayer(DataLayer):
 
         if self.params["mdoe"} != "train" and self._num_workers is not None:
             size = len(data)
+            """
+            多GPU计算时，以3GPU size=9为例：
+            每个GPU等分数据量
+            GPU1: [0:3]
+            GPU2: [3:6]
+            GPU3: [6:9]
+            """
             start = size // self._num_workers * self._worker_id
             if self._worker_id == self._num_workers - 1:
                 end = size

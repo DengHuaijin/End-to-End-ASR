@@ -100,20 +100,20 @@ class Model:
         self._mode = mode
         self._interactive = False
         
-        if self._mode not in ["train", "infer", "eval"]:
-                raise ValueError("Mode has to be one of ["train", "eval"]")
+        if self._mode not in ["train", "eval"]:
+            raise ValueError("Mode has to be one of ["train", "eval"]")
         
         if "max_steps" in params and "num_epochs" in params:
-                raise ValueError("You can't provide both of them")
+            raise ValueError("You can't provide both of max_steps and num_epochs")
                 
         if mode == "train":
-                if "max_steps" not in params and "num_epochs" not in params:
-                        raise ValueError("For the training mode, either max_steps and num_epochs has to be provided")
+            if "max_steps" not in params and "num_epochs" not in params:
+                    raise ValueError("For the training mode, either max_steps or num_epochs has to be provided")
                         
         none_list = ["print_samples_steps", "print_loss_steps", "save_checkpoint_steps", "save_summaries_steps"]
         for param in none_list:
-                if param not in self._params:
-                        self._params[params] = None
+            if param not in self._params:
+                self._params[params] = None
        
         # num_checkpoints不存在时自动返回5
         self._params["num_checkpoints"] = self._params.get("num_checkpoints", 5)
@@ -141,10 +141,13 @@ class Model:
         np.random.seed(rs)
 
         if "data_type" not in self._params:
-                self._params["data_type"] = tf.float32
+            self._params["data_type"] = tf.float32
         
         dl_params = self._params.get("data_layer_params", {})
-        
+       
+        """
+        data_layer_params里面原来没有定义batch_size
+        """
         if mode == "train":
             dl_params["batch_size"] = self._params["batch_size_per_gpu"]
         else:
@@ -160,12 +163,17 @@ class Model:
         dl_params["interactive"] = self._interactive
         
         self._data_layers = []
+        """
+        多GPU运算的话，每个GPU对应一个Speech2TextDataLayer
+        Speech2TextDataLayer(params, model, num_workers, work_id)
+        """
         for worker_id in range(self.num_gpus):
             self._data_layers.append(self._params["data_layer"](
                 params = dl_params, model = self,
                 num_workers = self.num_gpus, worker_id = worker_id))
         
         if self._mode = "train":
+            
             if "max_steps" in self._params:
                 slef._last_step = self._params["max_steps"]
                 self._steps_in_epoch = None
@@ -176,6 +184,10 @@ class Model:
                 if self._step_in_epoch is None:
                     raise ValueError("The data_layer is not compatible with epoch execution")
                 
+                """ 
+                多GPU计算中，在一个epoch中每个GPU各执行一部分steps
+                batch_size超过samples时steps_in_epoch为0
+                """
                 self._steps_in_epoch //= self.num_gpus
                 self._steps_in_epoch //= self._params.get("iter_size", 1)
                 
@@ -193,7 +205,7 @@ class Model:
 		
     def compile(self, force_var_refuse = False, checkpoint = False):
     """
-    Tensorflow graph is build here.
+    Tensorflow graph is built here.
     """
         if "initializer" not in self.params:
             initializer = None
@@ -203,7 +215,10 @@ class Model:
         
         losses = []
         for gpu_cnt, gpu_id in enumerate(self._gpu_ids):
-            
+            """
+            如果GPU>=2，启用reuse模式，即多个GPU上的图公用相同名称的变量
+            单个GPU的话共用没有意义，所以这里用gpu_cnt>0判断一下
+            """
             with tf.device("/gpu:{}".format(gpu_id)), tf.variable_scope(
             name_or_scope = tf.get_variable_scope(), 
             reuse = force_var_reuse or (gpu_cnt > 0),

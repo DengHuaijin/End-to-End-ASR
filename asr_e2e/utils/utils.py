@@ -7,6 +7,7 @@ import runpy
 import ast
 import copy
 import os
+import sys
 
 import numpy as np
 import six
@@ -28,7 +29,7 @@ class Logger(object):
         self.stream.flush()
         self.log.flush()
 
-def create_log_dir(args, base_config):
+def create_logdir(args, base_config):
 
     logdir = base_config["logdir"]
     if not os.path.exists(logdir):
@@ -53,32 +54,25 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
     
     train_config = copy.deepcopy(base_config)
     eval_config = copy.deepcopy(base_config)
-    infer_config = copy.deepcopy(base_config)
 
-    if args.mode == "train" or args.mode == "train_eval":
+    if args.mode == "train":
+        """
+        将base_params和train_params整合到一起
+
+        """
         if "train_params" in config_module:
             nested_update(train_config, copy.deepcopy(config_module["train_params"]))
             deco_print("Training config:")
             pprint.pprint(train_config)
-    if args.mode == "eval" or args.mode == "train_eval":
+    
+    if args.mode == "eval":
+        
         if "eval_params" in config_module:
             nested_update(eval_config, copy.deepcopy(config_module["eval_params"]))
             deco_print("Evaluation config:")
             pprint.pprint(eval_config)
-    if args.mode == "infer":
-        if args.infer_output_file is None:
-            raise ValueError("infer output file is required")
-        if "infer_params" in config_module:
-            nested_update(infer_config, copy.deepcopy(config_module["infer_params"]))
-
-    if args.mode == "train_eval":
-        train_model = base_model(params = train_config, mode = "train")
-        train_model.complie()
-        eval_model = base_model(params = eval_config, mode = "eval")
-        eval_model.complie()
-        model = (train_model, eval_model)
     
-    elif args.mode == "train":
+    if args.mode == "train":
         model = base_model(params = train_config, mode = "train")
         model.complie()
     
@@ -86,12 +80,7 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
         model = base_model(params = eval_config, mode = "eval")
         model.complie(force_var_reuse = False)
     
-    else:
-        model = base_model(params = infer_config, mode = args.mode)
-        model.complie(checkpoint = checkpoint)
-    
     return model
-
 
 def flatten_dict(dct):
     flat_dict = {}
@@ -156,7 +145,7 @@ def get_base_config(args):
 
     parser.add_argument("--enable_logs", dest = "enable_logs", action = "store_true")
 
-    args, unknown = parser.parse_know_args(args)
+    args, unknown = parser.parse_known_args(args)
 
     if args.mode not in ["train", "eval"]:
         raise ValueError("Mode has to be one of 'train', 'eval'")
