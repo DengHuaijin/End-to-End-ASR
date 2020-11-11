@@ -216,7 +216,7 @@ class Model:
         losses = []
         for gpu_cnt, gpu_id in enumerate(self._gpu_ids):
             """
-            如果GPU>=2，启用reuse模式，即多个GPU上的图公用相同名称的变量
+            如果GPU>=2，启用reuse模式，即多个GPU上的图共用相同名称的变量
             单个GPU的话共用没有意义，所以这里用gpu_cnt>0判断一下
             """
             with tf.device("/gpu:{}".format(gpu_id)), tf.variable_scope(
@@ -229,7 +229,11 @@ class Model:
                 
                 self.get_data_layer(gpu_cnt).build_graph()
                 input_tensors = self.get_data_layer(gpu_cnt).input_tensors
-                
+               
+                """
+                _build_forward_pass_graph 在Speech2Text中实现
+
+                """
                 loss, self._outputs[gpu_cnt] = self._build_forward_pass_graph(input_tensors, gpu_id = gpu_cnt)
                 if self._outputs[gpu_cnt] is not None and not isinstance(self._outputs[gpu_cnt], list):
                     raise ValueError("Decoder outputs have to be either None or list")
@@ -254,6 +258,7 @@ class Model:
                 lr_params = self.params.get("lr_policy_params", {})
 
                 func_params = signature(self.params["lr_policy"]).parameters
+                
                 if "decay_steps" in func_params and "decay_steps" not in lr_params:
                     lr_params["decay_steps"] = self._last_step
                     if "begin_decay_at" in func_params:
@@ -270,6 +275,7 @@ class Model:
 
             var_list = tf.trainable_variables()
             freeze_variables_regex = self.params.get("freeze_variables_regex", None)
+            
             if freeze_variables_regex is not None:
                 pattern = re.compile(freeze_variables_regex)
                 var_list = [var for var in tf.trainable_variables() if not pattern.match(var.name)]
@@ -304,22 +310,23 @@ class Model:
                 deco_print("Trainable variables:")
                 total_params = 0
                 unknown_shapes = False
-                for var in var_list:
-                    var_params = 1
-                    deco_print("{}".format(var.name), offset = 2)
-                    deco_print("shape: {}, {}".format(var.get_shape(), var.dtype), offset = 2)
+            
+            for var in var_list:
+                var_params = 1
+                deco_print("{}".format(var.name), offset = 2)
+                deco_print("shape: {}, {}".format(var.get_shape(), var.dtype), offset = 2)
 
-                    if var.get_shape():
-                        for dim in var.get_shape():
-                            var_params *= dim.value
-                        total_params += var_params
-                    else:
-                        unknown_shapes = True
-                
-                if unknown_shapes:
-                    deco_print("Encountered unknown variable shape, can't compute total number of parameters")
+                if var.get_shape():
+                    for dim in var.get_shape():
+                        var_params *= dim.value
+                    total_params += var_params
                 else:
-                    deco_print("Total trainable parameters: {}".format(total_aprams))
+                    unknown_shapes = True
+            
+            if unknown_shapes:
+                deco_print("Encountered unknown variable shape, can't compute total number of parameters")
+            else:
+                deco_print("Total trainable parameters: {}".format(total_aprams))
 
     
     @abc.abstractmethod
@@ -379,7 +386,7 @@ class Model:
 
     def get_num_objects_per_step(self, worker_id = 0):
 
-        is self._num_objects_per_step:
+        if self._num_objects_per_step:
             return self._num_objects_per_step[worker_id]
         else:
             raise NotImplementedError

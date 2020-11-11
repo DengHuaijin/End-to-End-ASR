@@ -28,6 +28,10 @@ plot attention暂时不支持
 ## **class Optimizer**
 无视on_horovod的判断条件,直接调用optimizer.apply_gradients()
 
+optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下：
+
+**global_step()** -> **update_ops** -> **optimizer** -> **opt.compute_gradients** -> **opt.apply_gradients**
+
 ## train
 取消对hook的支持
 

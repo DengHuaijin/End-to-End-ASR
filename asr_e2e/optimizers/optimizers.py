@@ -78,6 +78,7 @@ def optimize_loss(loss,
 
     global_step = tf.train.get_or_create_gloabl_step()
     lr = learning_rate_decay_fn(global_step)
+    
     if "learning_rate" in summaries:
         tf.summary.scalar("learning_rate", lr)
 
@@ -111,7 +112,7 @@ def optimize_loss(loss,
             opt = MixedPrecisionOptimizerWrapper(opt, loss_scale = loss_scaling)
 
         """
-        Computr gradients
+        Compute gradients
         Inputs:
             var_list: A list or tuple of tf.Variable to update to minimize loss.
                       Defaults to the list of variables collected in the graph 
@@ -153,7 +154,7 @@ def post_process_gradients(grads_and_vars, summaries, lr,
                 "global_gradient_norm",
                 _global_norm_with_cast(grads_and_vars))
 
-    if clip_gradients is None:
+    if clip_gradients is not None:
         grads_and_vars = _clip_gradients_by_norm(grads_and_vars, clip_gradients)
     
     # Add histograms for variables, gradients and gradient norms
