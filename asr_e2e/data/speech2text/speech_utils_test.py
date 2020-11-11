@@ -77,6 +77,34 @@ class SpeechUtilsTests(tf.test.TestCase):
                             self.assertAlmostEqual(np.std(input_features), 1.0, places = 6)
                             
                             
+    def test_get_speech_features_from_file_augmentation(self):
+        augmentation = {
+                "speed_perturbation_ratio": 0.0,
+                "noise_level_min": -90,
+                "noise_level_max": -46
+                }
+        filename = "wav_files/103-1240-0000.wav"
+        num_features = 161
+        params = {}
+        params["sample_freq"] = 16000
+        params["num_audio_features"] = num_features
+        input_features_clean, _ = get_speech_features_from_file(filename, params)
 
+        params["augmentation"] = augmentation
+
+        input_features_aug, _ = get_speech_features_from_file(filename, params)
+        
+        self.assertTrue(np.all(np.not_equal(input_features_clean, input_features_aug)))
+
+        augmentation = {
+                "speed_perturbation_ratio": 0.2,
+                "noise_level_min": -90,
+                "noise_level_max": -46
+                }
+
+        params["augmentation"] = augmentation
+        input_features_aug, _ = get_speech_features_from_file(filename, params)
+        self.assertNotEqual(input_features_clean.shape[0], input_features_aug.shape[0])
+        self.assertEqual(input_features_clean.shape[1], input_features_aug.shape[1])
 
 tf.test.main()

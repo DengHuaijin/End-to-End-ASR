@@ -185,7 +185,7 @@ def get_speech_features_librosa(signal, sample_freq, num_features,
 
     if augmentation:
         n_freq_mask = augmentation.get("n_freq_mask", 0)
-        n_time_mask = augmentation.egt("n_time_mask", 0)
+        n_time_mask = augmentation.get("n_time_mask", 0)
         width_freq_mask = augmentation.get("width_freq_mask", 10)
         width_time_mask = augmentation.get("width_time_mask", 50)
 
