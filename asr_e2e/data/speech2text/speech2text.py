@@ -160,6 +160,7 @@ class Speech2TextDataLayer(DataLayer):
         return self._iterator
 
     def build_graph(self):
+        
         with tf.device("/cpu:0"):
             """
             Builds data processing graph using tf.data API
@@ -179,7 +180,7 @@ class Speech2TextDataLayer(DataLayer):
 
                 files.shape == (28539,2)
                 用from_tensor_slices处理之后，根据第一个维度对数据进行切分，即切分为28539个元素，
-                每个元素维度为2，即(2,)
+                每个元素维度为2，即(2,) 每个元素可以视为一个list [filename, transcript]
 
                 """
                 self._dataset = tf.data.Dataset.from_tensor_slices(self._files)
@@ -197,7 +198,7 @@ class Speech2TextDataLayer(DataLayer):
                 
                 """
                 过滤时长小于max_duration的数据，被self._parse_audio_transcript_element处理后的
-                dataset结构发生变化， x x_len y y_len duration
+                dataset结构发生变化， source source_length target target_length audio_duration
                 """
                 if self.params["max_duration"] > 0:
                     self._dataset = self._dataset.filter(
@@ -213,19 +214,27 @@ class Speech2TextDataLayer(DataLayer):
                         lambda x, x_len, y, y_len, duration:
                         [x, x_len, y, y_len],
                         num_parallel_calls = 8)
-
+                
+                """
+                所有的source统一用[None, num_audio_features]大小的0来填充
+                None表示source中最大的length
+                同理，target也用[None]大小的target_pad_value来填充
+                """
                 self._dataset = self._dataset.padded_batch(
                         self.params["batch_size"],
                         padded_shapes = ([None, self.params["num_audio_features"]], 1, [None], 1),
                         padding_values = (tf.cast(0, self.params["dtype"]), 0, self.target_pad_value, 0))
 
             self._iterator = self._dataset.prefetch(tf.contrib.data.AUTOTUNE).make_initilizable_iterator()
-
-            if self.params["mode"] != "infer":
-                x, x_length, y, y_length = self._iterator.get_next()
-                y.set_shape([self.params["batch_size"], None])
-                y_length = tf.reshape(y_length, [self.params["batch_size"]])
-
+            
+            """
+            从iterator取出来的数据只有一个batch_size大小
+            """
+            x, x_length, y, y_length = self._iterator.get_next()
+            y.set_shape([self.params["batch_size"], None])
+            y_length = tf.reshape(y_length, [self.params["batch_size"]])
+            
+            # [B,T,F]
             x.set_shape([self.params["batch_size"], None, self.params["num_audio_features"]])
             x_length = tf.reshape(x_length, [self.params["batch_size"]])
 
@@ -259,6 +268,7 @@ class Speech2TextDataLayer(DataLayer):
 
         if self.autoregressive:
             target_indices = target_indices = [self.end_index]
+        
         target = np.array(target_indices)
 
         source, audio_duration = get_speech_features_from_file(audio_filename, params = self.params)
