@@ -10,6 +10,8 @@
 
 同时与horvod相关的一些参数也没有添加进去，比如 **iter_size** 
 
+model.compile()在utils中的create_model实现，compile中会调用_build_forward_graph
+
 ### EncoderDecoderModel
 
 ### Encoder

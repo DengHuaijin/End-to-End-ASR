@@ -66,6 +66,7 @@ class FullyConnectedTimeDecoder(Decoder):
         
         # converting to time major
         logits = tf.transpose(logits, [1, 0, 2])
+        
         if "logits_to_outputs_func" in self.params:
             outputs = self.params["logits_to_outputs_func"](logtis, input_dict)
 
@@ -135,7 +136,8 @@ class FullyConnectedCTCDecoder(FullyConnectedTimeDecoder):
                 if logits.dtype.base_type != tf.float32:
                     logits = tf.cast(logits, tf.float32)
                 decoded, neg_sum_logits = tf.nn.ctc_greedy_decoder(
-                        logits, decoder_input["encoder_output"]["src_length"],
+                        logits, 
+                        decoder_input["encoder_output"]["src_length"],
                         merge_repeated)
 
                 return decoded

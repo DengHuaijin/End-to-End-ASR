@@ -60,7 +60,7 @@ class CTCLoss(Loss):
         """
 
         logits = input_dict["decoder_output"]["logits"]
-        tgt_sequence, tgt_lenght = input_dict["target_tensors"]
+        tgt_sequence, tgt_length = input_dict["target_tensors"]
         # ctc loss needs an access to src_length, since they might be changed in the encoder
         src_length = input_dict["decoder_output"]["src_length"]
 

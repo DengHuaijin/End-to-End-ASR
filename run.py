@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from asr_e2e.utils.utils import deco_print, get_base_config, check_base_model_logdir, create_logdir, check_logdir, create_model
 
-from asr_e2e.utils.funcs import train, evaluate
+from asr_e2e.utils import train, evaluate
 
 def main():
 
