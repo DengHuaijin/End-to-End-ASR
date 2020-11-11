@@ -63,9 +63,8 @@ base_params = {
         "rnn_cell_dim": 512,
         "rnn_type": "cudnn_gru",
         "num_rnn_layers": 2,
-        "run_undirectional": False,
+        "run_unidirectional": False,
         "row_conv": False,
-        "row_conv_width": 8,
         "use_cudnn_rnn": True,
 
         "dropout_keep_prob": 0.5,

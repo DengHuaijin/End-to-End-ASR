@@ -116,7 +116,7 @@ class DeepSpeech2Encoder(Encoder):
     def _encode(self, input_dict):
         source_sequence, src_length = input_dict["source_tensors"]
 
-        training= (self._model == "train")
+        training = (self._model == "train")
         dropout_keep_prob = self.params["dropout_keep_prob"] if training else 0.0
         regularizer = self.params.get("regularizer", None)
         data_format = self.params.get("data_format", "channels_last")
@@ -213,10 +213,10 @@ class DeepSpeech2Encoder(Encoder):
             if self.params["use_cudnn_rnn"]:
                 # [B, T, C] -> [T, B, C]
                 rnn_input = tf.transpose(top_layer, [1, 0 ,2])
-                if self.params["rnn_undirectional"]:
+                if self.params["rnn_unidirectional"]:
                     direction = cudnn_rnn_ops.CUDNN_RNN_UNIDIRECTION
                 else:
-                    direction = cudnn_rnn_ops.CUDNN_RNN_BIDIRECRION
+                    direction = cudnn_rnn_ops.CUDNN_RNN_BIDIRECTION
 
                 if rnn_type == "cudnn_gru" or rnn_type == "gru":
                     rnn_block = tf.contrib.cudnn_rnn.CudnnGRU(

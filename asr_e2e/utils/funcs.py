@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from six.moves import range
 
-from asr_e2e.utils.utils import deco_print, get_results_for_epoch
+from .utils import deco_print, get_results_for_epoch
 """
 from .hooks import PrintSampleHook, RunEvaluationHook, PrintLossAndTimeHook, BroadcastGlobalVariablesHook
 from .helpers import TransferMonitoredTrainingSession, TransferScaffold, \

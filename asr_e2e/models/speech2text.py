@@ -115,6 +115,7 @@ class Speech2Text(EncoderDecoderModel):
             raise ValueError("source tensors should be a list")
 
         source_tensors = input_tensors["source_tensors"]
+        
         if self.mode == "train" or self.mode == "eval":
             if "target_tensors" not in input_tensors:
                 raise ValueError("Input tensors  should contain 'target_tensors' key in train and eval mode")
@@ -125,6 +126,10 @@ class Speech2Text(EncoderDecoderModel):
             target_tensors = input_tensors["target_tensors"]
 
         with tf.variable_scope("ForwardPass"):
+            """
+            这里的self.encoder是DeepSpeech2Encoder类的实例
+            self.decoder是FullyConnectedCTCDecoder类的实例
+            """
             encoder_input = {"source_tensors": source_tensors}
             encoder_output = self.encoder.encode(input_dict = encoder_input)
 
@@ -147,7 +152,7 @@ class Speech2Text(EncoderDecoderModel):
         
         return loss, model_outputs
 
-    def print_logts(self, input_values, output_values, training_step):
+    def print_logs(self, input_values, output_values, training_step):
 
         y, len_y = input_values["target_tensors"]
         decoded_sequence = output_values
