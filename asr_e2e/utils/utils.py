@@ -75,11 +75,11 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
     
     if args.mode == "train":
         model = base_model(params = train_config, mode = "train")
-        model.complie()
+        model.compile
     
     elif args.mode == "eval":
         model = base_model(params = eval_config, mode = "eval")
-        model.complie(force_var_reuse = False)
+        model.compile(force_var_reuse = False)
     
     return model
 

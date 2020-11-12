@@ -63,7 +63,7 @@ base_params = {
         "rnn_cell_dim": 512,
         "rnn_type": "cudnn_gru",
         "num_rnn_layers": 2,
-        "run_unidirectional": False,
+        "rnn_unidirectional": False,
         "row_conv": False,
         "use_cudnn_rnn": True,
 
@@ -82,7 +82,7 @@ base_params = {
         "decoder_library_path": "ctc_decoder_with_lm/libctc_decoder_with_kenlm.so",
         "trie_path": "language_model/trie.binary",
         "lm_path": "language_model/4-gram.binary",
-        "alphabet_config_path": "vocab.txt",
+        "alphabet_config_path": "egs/librispeech/config/vocab.txt",
             },
     "loss": CTCLoss,
     "loss_params": {},
@@ -99,7 +99,7 @@ train_params = {
                 "noise_level_max": -60,
             },
 
-            "vocab_file": "vocab.txt",
+            "vocab_file": "egs/librispeech/vocab.txt",
             "dataset_files": [
                 "egs/librispeech/data/librispeech/librivox-train-clean-100.csv",
                 "egs/librispeech/data/librispeech/librivox-train-clean-360.csv"
@@ -113,7 +113,7 @@ eval_params = {
         "data_layer_params": {
             "num_audio_features": 96,
             "input_type": "spectrogram",
-            "vocab_file": "vocab.txt",
+            "vocab_file": "egs/librispeech/vocab.txt",
             "dataset_files": [
                 "egs/librispeech/data/librispeech/librivox-dev-clean.csv",
                 ],

@@ -27,9 +27,9 @@ def load_pre_existing_vocabulary(path, min_idx = 0, read_chars = False):
         dict: vocabulary dictionary mapping tokens to int ids
     """
 
-    idx = min_dix
+    idx = min_idx
     vocab_dict = {}
-    with io,open(path, newline = "", encoding = "utf-8") as f:
+    with io.open(path, newline = "", encoding = "utf-8") as f:
         for line in f:
             if not line or line == "\n":
                 continue

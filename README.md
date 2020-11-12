@@ -37,6 +37,8 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 ## train
 取消对hook的支持
 
+2020/11/12 发现了一个很奇怪的bug，没有hook的话变量无法保存，训练无法启动，可以尝试不使用estimator
+
 ## Speech2TextDataLayer
 
 data_split() 在train模式下应该对数据按GPU数量进行分割，反之在eval模式下不分割

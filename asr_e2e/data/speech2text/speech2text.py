@@ -87,7 +87,7 @@ class Speech2TextDataLayer(DataLayer):
         for csv in params["dataset_files"]:
             
             files = pd.read_csv(csv, encoding = "utf-8")
-            if self._files == None:
+            if self._files is None:
                 self._files = files
             else:
                 self._files = self._files.append(files)
@@ -115,7 +115,7 @@ class Speech2TextDataLayer(DataLayer):
         if self.params.get("precompute_mel_basis", False) and self.params["input_type"] == "logfbank":
             num_fft = (self.params.get("num_fft", None) or 
                 2**math.ceil(math.log2(self.params["window_size"] * self.params["sample_freq"])))
-        mel_basis = librosa.filters.mel(
+            mel_basis = librosa.filters.mel(
                 self.params["sample_freq"],
                 num_fft,
                 n_mels = self.params["num_audio_features"],
@@ -136,7 +136,7 @@ class Speech2TextDataLayer(DataLayer):
 
     def split_data(self, data):
 
-        if self.params["mdoe"] != "train" and self._num_workers is not None:
+        if self.params["mode"] != "train" and self._num_workers is not None:
             size = len(data)
             """
             多GPU计算时，以3GPU size=9为例：
@@ -281,3 +281,6 @@ class Speech2TextDataLayer(DataLayer):
 
     def get_size_in_samples(self):
         return len(self._files)
+
+    def input_tensors(self):
+        return self._input_tensors

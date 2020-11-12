@@ -95,7 +95,7 @@ class DeepSpeech2Encoder(Encoder):
             "use_cudnn_rnn": bool,
             "rnn_cell_dim": int,
             "rnn_type": ["layernorm_lstm", "lstm", "gru", "cudnn_gru", "cudnn_lstm"],
-            "rnn_undirectional": bool})
+            "rnn_unidirectional": bool})
 
     @staticmethod
     def get_optional_params():

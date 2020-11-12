@@ -30,7 +30,7 @@ class Loss:
 
         if "dtype" not in self._params:
             if self._model:
-                self._params["dtype"] = self._model.get_yf_dtype()
+                self._params["dtype"] = self._model.get_tf_dtype()
             else:
                 self._params["dtype"] = tf.float32
 
