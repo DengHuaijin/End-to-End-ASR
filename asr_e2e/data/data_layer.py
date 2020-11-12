@@ -32,19 +32,19 @@ class DataLayer:
     def __init__(self, params, model, num_workers, worker_id):
         
         check_params(params, self.get_required_params(), self.get_optional_params())
-        self._params = deepcopy(params)
+        self._params = copy.deepcopy(params)
         self._model = model
 
         if "dtype" not in self._params:
             if self._model:
-                self._params["dtype"] = self._model.get_ty_type()
+                self._params["dtype"] = self._model.get_tf_dtype()
             else:
                 self._params["dtype"] = tf.float32
 
         if "shuffle" not in self._params:
             self._params["dtype"] = (self._params["mode"] == "train")
 
-        if self._params["model"] != "train" and self._params["shuffle"]:
+        if self._params["mode"] != "train" and self._params["shuffle"]:
             raise ValueError("Shuffle should not be performed in eval mode")
         
         self._num_workers = num_workers

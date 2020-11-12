@@ -47,7 +47,7 @@ def main():
         model = create_model(args, base_config, config_module, base_model, checkpoint)
         
         if args.mode == "train":
-            train(model, eval_model = None, debug_port = args.debug_port, custom_hooks = None)
+            train(model, eval_model = None, debug_port = None)
         elif args.mode == "eval":
             evluate(model, checkpoint)
 

@@ -7,6 +7,7 @@ import numpy as np
 import six
 import abc
 import copy
+import time 
 
 try:
     from inspect import signature
@@ -183,7 +184,7 @@ class Model:
                 # doing a few steps if data size is not divisible by the batch size
                 self._steps_in_epoch = self.get_data_layer().get_size_in_samples() // self.get_data_layer().params["batch_size"]
                 
-                if self._step_in_epoch is None:
+                if self._steps_in_epoch is None:
                     raise ValueError("The data_layer is not compatible with epoch execution")
                 
                 """ 
@@ -195,7 +196,7 @@ class Model:
                 
                 if self._steps_in_epoch == 0:
                     raise ValueError("Overall batch size is too big for this dataset")
-                self._last_step = self._params["num_epochs"] * self._step_in_epoch
+                self._last_step = self._params["num_epochs"] * self._steps_in_epoch
                         
         self._outputs = [None] * self.num_gpus
         

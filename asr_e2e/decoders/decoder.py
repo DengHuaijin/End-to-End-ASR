@@ -18,7 +18,7 @@ class Decoder:
         return {}
 
     @staticmethod
-    def get_optional_method():
+    def get_optional_params():
         return {
                 "regularizer": None,
                 "regularizer_params": dict,
@@ -28,7 +28,7 @@ class Decoder:
 
     def __init__(self, params, model, name = "decoder", mode = "train"):
         
-        check_params(params, self.get_required_params(), self.get_optional_method())
+        check_params(params, self.get_required_params(), self.get_optional_params())
         self._params = params
         self._model = model
 

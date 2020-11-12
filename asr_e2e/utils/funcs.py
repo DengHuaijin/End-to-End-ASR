@@ -16,7 +16,7 @@ from .helpers import TransferMonitoredTrainingSession, TransferScaffold, \
 from asr_e2e.data import WKTDataLayer
 """
 
-def train(train_model, eval_model = None, debug_report = None):
+def train(train_model, eval_model = None, debug_port = None):
     
     sess_config = tf.ConfigProto(allow_soft_placement = True)
     sess_config.gpu_options.allow_growth = True
