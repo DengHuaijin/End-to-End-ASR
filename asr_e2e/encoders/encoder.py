@@ -7,10 +7,10 @@ import copy
 import six
 import tensorflow as tf
 
-from asr_e2e.optimizers.mp_wrapper import mp_regularizer_wrapper
+# from asr_e2e.optimizers.mp_wrapper import mp_regularizer_wrapper
 from asr_e2e.utils.utils import check_params, cast_types
 
-@six.addmetaclass(abc.ABCMeta)
+@six.add_metaclass(abc.ABCMeta)
 class Encoder:
 
     @staticmethod
@@ -55,8 +55,8 @@ class Encoder:
                 init_dict = self._params.get("regularizer_params", {})
                 if self._params["regularizer"] is not None:
                     self._params["regularizer"] = self._params["regularizer"](**init_dict)
-                if self._params["dtype"] == "mixed":
-                    self._params["regularizer"] = mp_regularizer_wrapper(self._params["regularizer"])
+                # if self._params["dtype"] == "mixed":
+                #    self._params["regularizer"] = mp_regularizer_wrapper(self._params["regularizer"])
 
             if self._params["dtype"] == "mixed":
                 self._params["dtype"]  =tf.float16
@@ -69,7 +69,7 @@ class Encoder:
 
         self._compiled = True
         
-        witf tf.variable_scope(self._name, initializer = initializer, dtype = self.params["dtype"]):
+        with tf.variable_scope(self._name, initializer = initializer, dtype = self.params["dtype"]):
             return self._encode(self._cast_types(input_dict))
 
     def _cast_types(self, input_dict):

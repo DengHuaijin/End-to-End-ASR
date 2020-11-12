@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import runpy
 import ast
+import pprint
 import copy
 import os
 import sys
@@ -204,8 +205,9 @@ def check_base_model_logdir(base_logdir, args, restore_best_checkpoint = False):
 def check_logdir(args, base_config, restore_best_checkpoint=False):
 
     logdir = base_config['logdir']
+    checkpoint = None
     try:
-        if args.enbale_logs:
+        if args.enable_logs:
             ckpt_dir = os.path.join(logdir, 'logs')
         else:
             ckpt_dir = logdir
@@ -244,11 +246,12 @@ def check_logdir(args, base_config, restore_best_checkpoint=False):
                     raise IOError(" There is no valid Tensorflow checkpoint in the {} directory. Can't load model".format(ckpt_dir))
             else:
                 raise IOError("{} does not exit or is empty, can't restore model.".format(ckpt_dir))
+        
+        return checkpoint    
     
     except IOError as e:
         raise
     
-    return checkpoint
 
 def deco_print(line, offset = 0, start="*** ", end = "\n"):
     if six.PY2:
@@ -309,7 +312,7 @@ def check_params(config, required_dict, optional_dict):
         if pm not in required_dict and pm not in optional_dict:
             raise ValueError("Unknown parameter: {}".format(pm))
 
-def cast_type(input_dict, dtype):
+def cast_types(input_dict, dtype):
     cast_input_dict = {}
     for key, value in input_dict.items():
         if isinstance(value, tf.Tensor):

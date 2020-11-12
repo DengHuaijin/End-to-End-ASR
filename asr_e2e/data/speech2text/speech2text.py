@@ -7,7 +7,7 @@ import tensorflow as tf
 import six
 import math
 import librosa
-from six import string_type
+from six import string_types
 from six.moves import range
 
 from asr_e2e.data.data_layer import DataLayer
@@ -87,7 +87,7 @@ class Speech2TextDataLayer(DataLayer):
         for csv in params["dataset_files"]:
             
             files = pd.read_csv(csv, encoding = "utf-8")
-            if self._files = None:
+            if self._files == None:
                 self._files = files
             else:
                 self._files = self._files.append(files)
@@ -105,11 +105,11 @@ class Speech2TextDataLayer(DataLayer):
         self._iterator = None
         self._input_tensors = None
 
-        self.params["min_duration"] = self.params.get("min_duration"), -1.0)
-        self.params["max_duration"] = self.params.get("max_duration"), -1.0)
-        self.params["window_size"] = self.params.get("window_size"), 20e-3)
-        self.params["window_stride"] = self.params.get("window_stride"), 10e-3)
-        self.params["sample_freq"] = self.params.get("sample_freq"),16000)
+        self.params["min_duration"] = self.params.get("min_duration", -1.0)
+        self.params["max_duration"] = self.params.get("max_duration", -1.0)
+        self.params["window_size"] = self.params.get("window_size", 20e-3)
+        self.params["window_stride"] = self.params.get("window_stride", 10e-3)
+        self.params["sample_freq"] = self.params.get("sample_freq",16000)
 
         mel_basis = None
         if self.params.get("precompute_mel_basis", False) and self.params["input_type"] == "logfbank":
@@ -136,7 +136,7 @@ class Speech2TextDataLayer(DataLayer):
 
     def split_data(self, data):
 
-        if self.params["mdoe"} != "train" and self._num_workers is not None:
+        if self.params["mdoe"] != "train" and self._num_workers is not None:
             size = len(data)
             """
             多GPU计算时，以3GPU size=9为例：
@@ -274,7 +274,7 @@ class Speech2TextDataLayer(DataLayer):
         source, audio_duration = get_speech_features_from_file(audio_filename, params = self.params)
 
         return source.astype(self.params["dtype"].as_numpy_dtype()),\
-               np.int32([len(source)],\
+               np.int32([len(source)]),\
                np.int32(target),\
                np.int32([len(target)]),\
                np.float([audio_duration])

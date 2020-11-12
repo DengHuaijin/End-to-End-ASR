@@ -7,20 +7,20 @@ import tensorflow as tf
 from tensorflow.python.ops import control_flow_ops
 
 from asr_e2e.utils.utils import mask_nans, check_params
-from .automatic_loss_scaler import AutomaticLossScaler
-from .mp_wrapper import MixedPrecisionOptimizerWrapper
+# from .automatic_loss_scaler import AutomaticLossScaler
+# from .mp_wrapper import MixedPrecisionOptimizerWrapper
 
 OPTIMIZER_CLS_NAMES = {
         "Adagrad": tf.train.AdagradOptimizer,
         "Adam": tf.train.AdamOptimizer,
-        "Ftrl": tf.train.FtrlOptimzer,
+        "Ftrl": tf.train.FtrlOptimizer,
         "Momentum": tf.train.MomentumOptimizer,
         "RMSProp": tf.train.RMSPropOptimizer,
         "SGD": tf.train.GradientDescentOptimizer,
         "AdamW": tf.contrib.opt.AdamWOptimizer,
         }
 
-OPTIMIZER_SUMMARIES = ]
+OPTIMIZER_SUMMARIES = [
         "learning_rate",
         "gradients",
         "gradients_norm",
@@ -105,11 +105,11 @@ def optimize_loss(loss,
         if isinstance(loss_scaling, six.string_types):
             loss_scaling = AutomaticLossScaler(algorithm = loss_scaling,
                                                params = loss_scaling_params)
-        if "loss_scale" in summaries:
-            tf.summary.scalar("loss_scale", loss_scaling.loss_scale)
+        # if "loss_scale" in summaries:
+        #    tf.summary.scalar("loss_scale", loss_scaling.loss_scale)
 
-        if dtype == "mixed":
-            opt = MixedPrecisionOptimizerWrapper(opt, loss_scale = loss_scaling)
+        #if dtype == "mixed":
+        #    opt = MixedPrecisionOptimizerWrapper(opt, loss_scale = loss_scaling)
 
         """
         Compute gradients
@@ -193,8 +193,8 @@ def post_process_gradients(grads_and_vars, summaries, lr,
                 optional_dict = {
                     "larc_mode": ["clip", "scale"],
                     "min_update": float,
-                    "epsilon": float},
-                }
+                    "epsilon": float
+                },
         )
 
         larc_eta = larc_params["larc_eta"]

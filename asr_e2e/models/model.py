@@ -6,6 +6,7 @@ import tensorflow as tf
 import numpy as np
 import six
 import abc
+import copy
 
 try:
     from inspect import signature
@@ -27,17 +28,17 @@ class Model:
     """
     @staticmethod
     def get_required_params():
-	"""
-	returns:
-		Dict:
+        """
+        returns:
+                Dict:
         必须包含在__init__的params中,
         在这里暂时删除了use_horovod
-	"""
+        """
         return {
                 'batch_size_per_gpu':int,
                 'data_layer': None          # 任何继承DataLayer(data.data_layer.DataLayer)的类都可以作为输入
                 }
-	
+    
     @staticmethod
     def get_optional_params():
         return {
@@ -48,6 +49,7 @@ class Model:
                 
                 'save_summaries_steps': None,
                 'print_loss_steps': None,
+                'print_samples_steps': None,
                 'save_checkpoint_steps': None,
                 'num_checkpoints': int,
                 'restore_best_checkpoints': bool,
@@ -101,7 +103,7 @@ class Model:
         self._interactive = False
         
         if self._mode not in ["train", "eval"]:
-            raise ValueError("Mode has to be one of ["train", "eval"]")
+            raise ValueError("Mode has to be one of [train, eval]")
         
         if "max_steps" in params and "num_epochs" in params:
             raise ValueError("You can't provide both of max_steps and num_epochs")
@@ -172,7 +174,7 @@ class Model:
                 params = dl_params, model = self,
                 num_workers = self.num_gpus, worker_id = worker_id))
         
-        if self._mode = "train":
+        if self._mode == "train":
             
             if "max_steps" in self._params:
                 slef._last_step = self._params["max_steps"]
@@ -204,9 +206,9 @@ class Model:
         self.skip_update_ph = None
 		
     def compile(self, force_var_refuse = False, checkpoint = False):
-    """
-    Tensorflow graph is built here.
-    """
+        """
+        Tensorflow graph is built here.
+        """
         if "initializer" not in self.params:
             initializer = None
         else:

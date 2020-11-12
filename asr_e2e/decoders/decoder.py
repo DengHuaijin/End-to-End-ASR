@@ -1,5 +1,5 @@
-from __future__ absolute_import, print_function, division
-from __future__ unicode_literals
+from __future__ import absolute_import, print_function, division
+from __future__ import unicode_literals
 
 import abc
 import copy
@@ -7,7 +7,7 @@ import copy
 import six
 import tensorflow as tf
 
-from asr_e2e.optimizers.mp_wrapper import mp_regularizer_wrapper
+# from asr_e2e.optimizers.mp_wrapper import mp_regularizer_wrapper
 from asr_e2e.utils.utils import check_params, cast_types
 
 @six.add_metaclass(abc.ABCMeta)
@@ -53,8 +53,8 @@ class Decoder:
                 init_dict = self._params.get("regularizer_params", None)
                 if self._params["regularizer"] is not None:
                     self._params["regularizer"] = self._params["regularizer"](**init_dict)
-                if self._params["dtype"] == "mixed":
-                    self._params["regularizer"] = mp_regularizer_wrapper(self._params["regularizer"])
+                # if self._params["dtype"] == "mixed":
+                #    self._params["regularizer"] = mp_regularizer_wrapper(self._params["regularizer"])
 
         if "initializer" in self._params:
             init_dict = self.params.get("initializer_params", {})
