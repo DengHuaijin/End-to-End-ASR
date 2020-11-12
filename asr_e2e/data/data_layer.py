@@ -5,7 +5,7 @@ import abc
 import copy
 
 import six
-import tesnorflow as tf
+import tensorflow as tf
 
 from asr_e2e.utils.utils import check_params
 

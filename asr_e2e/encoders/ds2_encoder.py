@@ -106,10 +106,10 @@ class DeepSpeech2Encoder(Encoder):
             "bn_epsilon": float,})
 
     def __init__(self, params, model, name = "ds2_encoder", mode = "train"):
-    """
-    row_conv: whether to use a 'row' convolutional layer after RNNs
-    n_hidden: last fully-connected layer
-    """
+        """
+        row_conv: whether to use a 'row' convolutional layer after RNNs
+        n_hidden: last fully-connected layer
+        """
         super(DeepSpeech2Encoder, self).__init__(params, model, name, mode)
 
 
@@ -150,7 +150,7 @@ class DeepSpeech2Encoder(Encoder):
         elif layout == "BTFC":
             top_layer = tf.transpose(input_layer, [0, 2, 1, 3])
         elif layout == "BCFT":
-            top_layer = tf.transpose(input_layer, [0, 3, ,2, 1])
+            top_layer = tf.transpose(input_layer, [0, 3, 2, 1])
         else:
             top_layer = input_layer # BTFC
 

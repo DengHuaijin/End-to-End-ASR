@@ -1,5 +1,5 @@
 from __future__ import absolute_import, print_function, division
-from __futrue import unicode_literals
+from __future__ import unicode_literals
 
 import tensorflow as tf
 

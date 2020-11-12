@@ -2,9 +2,9 @@ import tensorflow as tf
 from asr_e2e.models import Speech2Text
 from asr_e2e.encoders import DeepSpeech2Encoder
 from asr_e2e.decoders import FullyConnectedCTCDecoder
-from asr_e2e.data import Seepch2TextDataLayer
+from asr_e2e.data import Speech2TextDataLayer
 from asr_e2e.losses import CTCLoss
-from asr_e2e.optimizers.lr_polices import exp_decay
+from asr_e2e.optimizers.lr_policies import exp_decay
 
 base_model = Speech2Text
 
@@ -39,7 +39,7 @@ base_params = {
     "summaries": ['learning_rate', 'variables', 'gradients', 'larc_summaries',
                   'varibale_norm', 'gradients_norm', 'gloabl_gradient_norm'],
 
-    "initializer": tf.contrib.layers.xavier_initilaizer,
+    "initializer": tf.contrib.layers.xavier_initializer,
     
     "encoder": DeepSpeech2Encoder,
     "encoder_params":{
