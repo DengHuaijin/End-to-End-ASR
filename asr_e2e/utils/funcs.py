@@ -22,14 +22,18 @@ def train(train_model, eval_model = None, debug_port = None):
     load_model_dir = train_model.params["load_model"]
 
     if train_model.params["save_checkpoint_steps"] is not None:
+        # noinspection PyTypeChecker
+        # /usr/local/lib/python3.5/dist-packages/tensorflow/python/training/saver.py 862
+        # /usr/local/lib/python3.5/dist-packages/tensorflow/python/framework/op_def_library.py 698
         saver = tf.train.Saver(save_relative_paths = True, max_to_keep = train_model.params["num_checkpoints"])
+        
         hooks.append(tf.train.CheckpointSaverHook(checkpoint_dir, saver = saver, save_steps = train_model.params["save_checkpoint_secs"]))
 
-    if train_model.params["print_loss_stesp"] is not None:
+    if train_model.params["print_loss_steps"] is not None:
         hooks.append(PrintLossAndTimeHook(
-            every_steps = train_model.params["print_loss_stesp"],
+            every_steps = train_model.params["print_loss_steps"],
             model = train_model,
-            print_ppl = isinstance(train_model.get_data_layer(), WKTDataLayer)))
+            print_ppl = False))
     
     if train_model.params["print_samples_steps"] is not None:
         hooks.append(PrintSampleHook(

@@ -17,16 +17,17 @@ class PrintSampleHook(tf.train.SessionRunHook):
         self._iter_count = 0
         self._global_step = None
         self._model = model
-
+        
+        # Using only the 1st GPU
         output_tensors = model.get_output_tensors(0)
         self._fetches = [model.get_data_layer(0).input_tensors, output_tensors]
 
     def begin(self):
         self._iter_count = 0
-        self._global_step = tf.train.get_global_stepp()
+        self._global_step = tf.train.get_global_step()
 
     def before_run(self, run_context):
-        if self._timer.shuould_trigger_for_step(self._iter_count)
+        if self._timer.shuould_trigger_for_step(self._iter_count):
             return tf.train.SessionRunArgs([self._fetches, self._global_step])
         return tf.train.SessionRunArgs([[], self._global_step])
 
@@ -56,7 +57,7 @@ class PrintLossAndTimeHook(tf.train.SessionRunHook):
         self._iter_count = 0
         self._global_step = None
         self._model = model
-        self.._fetches = [model.loss]
+        self._fetches = [model.loss]
         self._last_time = time.time()
 
     def begin(self):
