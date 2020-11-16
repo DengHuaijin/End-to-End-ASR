@@ -13,7 +13,7 @@ layers_dict = {
 def conv_bn_actv(layer_type, name, inputs, filters,
                  kernel_size, activation_fn, strides,
                  padding, regularizer, training,
-                 data_format, bn_momentus, bn_epsilon,
+                 data_format, bn_momentum, bn_epsilon,
                  dilation = 1):
 
     layer = layers_dict[layer_type]
@@ -56,7 +56,7 @@ def conv_bn_actv(layer_type, name, inputs, filters,
             gamma_regularizer = regularizer,
             training = training,
             axis = -1 if data_format == "channels_last" else 1,
-            momentus = bn_momentus,
+            momentum = bn_momentum,
             epsilon = bn_epsilon)
 
     if squeeze:

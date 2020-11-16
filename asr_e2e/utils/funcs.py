@@ -25,7 +25,7 @@ def train(train_model, eval_model = None, debug_port = None):
         # noinspection PyTypeChecker
         # /usr/local/lib/python3.5/dist-packages/tensorflow/python/training/saver.py 862
         # /usr/local/lib/python3.5/dist-packages/tensorflow/python/framework/op_def_library.py 698
-        saver = tf.train.Saver(save_relative_paths = True, max_to_keep = train_model.params["num_checkpoints"])
+        saver = tf.train.Saver(var_list = None, save_relative_paths = True, max_to_keep = train_model.params["num_checkpoints"])
         
         hooks.append(tf.train.CheckpointSaverHook(checkpoint_dir, saver = saver, save_steps = train_model.params["save_checkpoint_secs"]))
 

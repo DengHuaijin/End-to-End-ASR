@@ -47,7 +47,7 @@ class FullyConnectedTimeDecoder(Decoder):
 
     def _decode(self, input_dict):
         inputs = input_dict["encoder_output"]["outputs"]
-        regularizer = self.params("regularizer", None)
+        regularizer = self.params.get("regularizer", None)
 
         batch_size, _, n_hidden = inputs.get_shape().as_list()
         # [B, T, A] -> [B*T, A]
@@ -68,7 +68,7 @@ class FullyConnectedTimeDecoder(Decoder):
         logits = tf.transpose(logits, [1, 0, 2])
         
         if "logits_to_outputs_func" in self.params:
-            outputs = self.params["logits_to_outputs_func"](logtis, input_dict)
+            outputs = self.params["logits_to_outputs_func"](logits, input_dict)
 
             return {
                     "outputs": outputs,
@@ -133,7 +133,7 @@ class FullyConnectedCTCDecoder(FullyConnectedTimeDecoder):
         
         else:
             def decode_without_lm(logits, decoder_input, merge_repeated = True):
-                if logits.dtype.base_type != tf.float32:
+                if logits.dtype.base_dtype != tf.float32:
                     logits = tf.cast(logits, tf.float32)
                 decoded, neg_sum_logits = tf.nn.ctc_greedy_decoder(
                         logits, 
