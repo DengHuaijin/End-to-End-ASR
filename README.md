@@ -38,6 +38,10 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 
 2020/11/12 发现了一个很奇怪的bug，没有hook的话变量无法保存，训练无法启动，可以尝试不使用estimator
 
+这个问题其实并不是hooks导致的，是因为在Saver的输入变量中没有var_list，看了下OpenSeq2Seq的官方代码，
+
+他直接在Saver这里用了一个#noninspection 跳过检查，很骚好吧。不给我没用PyCharm，tf源码中的ValueError没法跳过，有点僵硬
+
 2020/11/16 加入对hook的支持，在hooks.py中继承官方的tf.train.SessionRunHook类自定义hook，因为现阶段
 
 还是用estimator更方便一些
