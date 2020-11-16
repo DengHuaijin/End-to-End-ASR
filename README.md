@@ -35,9 +35,12 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 **global_step()** -> **update_ops** -> **optimizer** -> **opt.compute_gradients** -> **opt.apply_gradients**
 
 ## train
-取消对hook的支持
 
 2020/11/12 发现了一个很奇怪的bug，没有hook的话变量无法保存，训练无法启动，可以尝试不使用estimator
+
+2020/11/16 加入对hook的支持，在hooks.py中继承官方的tf.train.SessionRunHook类自定义hook，因为现阶段
+
+还是用estimator更方便一些
 
 ## Speech2TextDataLayer
 

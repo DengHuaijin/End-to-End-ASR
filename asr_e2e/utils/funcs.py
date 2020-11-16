@@ -9,23 +9,32 @@ import tensorflow as tf
 from six.moves import range
 
 from .utils import deco_print, get_results_for_epoch
-"""
-from .hooks import PrintSampleHook, RunEvaluationHook, PrintLossAndTimeHook, BroadcastGlobalVariablesHook
-from .helpers import TransferMonitoredTrainingSession, TransferScaffold, \
-                     get_assign_ops_and_restore_dict, run_assign_and_saver
-from asr_e2e.data import WKTDataLayer
-"""
+from .hooks import PrintSampleHook, PrintLossAndTimeHook
 
 def train(train_model, eval_model = None, debug_port = None):
     
     sess_config = tf.ConfigProto(allow_soft_placement = True)
     sess_config.gpu_options.allow_growth = True
+        
+    hooks = [tf.train.StopAtStepHook(last_step = train_model.last_step)]
 
     checkpoint_dir = train_model.params["logdir"]
     load_model_dir = train_model.params["load_model"]
 
     if train_model.params["save_checkpoint_steps"] is not None:
         saver = tf.train.Saver(save_relative_paths = True, max_to_keep = train_model.params["num_checkpoints"])
+        hooks.append(tf.train.CheckpointSaverHook(checkpoint_dir, saver = saver, save_steps = train_model.params["save_checkpoint_secs"]))
+
+    if train_model.params["print_loss_stesp"] is not None:
+        hooks.append(PrintLossAndTimeHook(
+            every_steps = train_model.params["print_loss_stesp"],
+            model = train_model,
+            print_ppl = isinstance(train_model.get_data_layer(), WKTDataLayer)))
+    
+    if train_model.params["print_samples_steps"] is not None:
+        hooks.append(PrintSampleHook(
+            every_steps = train_model.params["print_samples_steps"],
+            model = train_model))
 
     total_time = 0.0
 
@@ -80,7 +89,7 @@ def train(train_model, eval_model = None, debug_port = None):
             save_checkpoint_secs = None,
             log_step_count_steps = train_model.params["save_summaries_steps"],
             stop_grace_period_secs = 300,
-            hooks = None)
+            hooks = hooks)
     step = 0
     num_bench_updates = 0
 

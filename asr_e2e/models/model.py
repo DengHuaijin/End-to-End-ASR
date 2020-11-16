@@ -394,6 +394,10 @@ class Model:
         else:
             raise NotImplementedError
 
+    def maybe_print_logs(self, input_values, output_values, training_step):
+
+        return {}
+
     @property
     def params(self):
 
