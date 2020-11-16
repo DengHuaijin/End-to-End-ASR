@@ -75,7 +75,7 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
     
     if args.mode == "train":
         model = base_model(params = train_config, mode = "train")
-        model.compile
+        model.compile()
     
     elif args.mode == "eval":
         model = base_model(params = eval_config, mode = "eval")
@@ -322,7 +322,7 @@ def cast_types(input_dict, dtype):
                     continue
         
         if isinstance(value, dict):
-            cast_input[key] = cast_type(input_dict[key], dtype)
+            cast_input_dict[key] = cast_types(input_dict[key], dtype)
             continue
         
         if isinstance(value, list):
@@ -336,14 +336,17 @@ def cast_types(input_dict, dtype):
                 cur_list.append(nest_value)
             cast_input_dict[key] = cur_list
             continue
-        cat_input_dict[key] = input_dict[key]
+        cast_input_dict[key] = input_dict[key]
     return cast_input_dict
 
 def mask_nans(x):
-
+    """
+    把输入里面的inf nan都转换为0
+    """
     x_zeros = tf.zeros_like(x)
     x_mask = tf.is_finite(x)
-    y = tf.where(x_mask, x_zeros)
+    y = tf.where(x_mask, x, x_zeros)
+    
     return y
 
 def iterate_data(model, sess, compute_loss, mode, verbose, num_steps = None):

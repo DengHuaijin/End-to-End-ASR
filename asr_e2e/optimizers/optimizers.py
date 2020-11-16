@@ -35,7 +35,7 @@ def get_regularization_loss(scope = None, name = "total_regularization_loss"):
     
     losses = tf.losses.get_regularization_loss(scope)
     # tf.add_n Adds all tensors element-wise
-    if losses:
+    if losses is not None:
         return tf.add_n(list(map(lambda x: tf.cast(x, tf.float32), losses)), name = name)
     else:
         return tf.constant(0.0)
@@ -76,13 +76,13 @@ def optimize_loss(loss,
         raise AttributeError(
                 "LARC and gradient norm clipping should not be used together")
 
-    global_step = tf.train.get_or_create_gloabl_step()
+    global_step = tf.train.get_or_create_global_step()
     lr = learning_rate_decay_fn(global_step)
     
     if "learning_rate" in summaries:
         tf.summary.scalar("learning_rate", lr)
 
-    with tf.variable_scope("Loss Optimization"):
+    with tf.variable_scope("LossOptimization"):
         update_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
         """
         contro_flow_ops.with_dependencies 实现图节点之间的依赖控制
@@ -138,7 +138,7 @@ def optimize_loss(loss,
                     clip_gradients = clip_gradients,
                     larc_params = larc_params,
                     summaries = summaries),
-                global_step = gloabl_step)
+                global_step = global_step)
         
         # ensure the train tensor computes grad_updates
         train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
@@ -159,12 +159,12 @@ def post_process_gradients(grads_and_vars, summaries, lr,
     
     # Add histograms for variables, gradients and gradient norms
     for gradient, variable in grads_and_vars:
-        if isinstance(gradient, tf.IndexSlices):
+        if isinstance(gradient, tf.IndexedSlices):
             grad_values = gradient.values
         else:
             grad_values = gradient
 
-        if isinstance(varibale, tf.IndexSlices):
+        if isinstance(variable, tf.IndexedSlices):
             var_values = variable.values
         else:
             var_values = variable
@@ -273,7 +273,7 @@ def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
         scale = clip_norm * tf.minimum(1.0 / use_norm, tf.ones([1], dtype = use_norm.dtype) / clip_norm)
 
         values = [tf.cast(
-            tf.convert_to_tensor(t.values if isinstance(t, tf.IndexSlices) else t, name="t_%d" % i), 
+            tf.convert_to_tensor(t.values if isinstance(t, tf.IndexedSlices) else t, name="t_%d" % i), 
             dtype = tf.float32)
             if t is not None else t for i,t in enumerate(t_list)]
 
@@ -286,7 +286,7 @@ def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
                     values_clipped.append(tf.identity(v * scale, name = "%s_%d" % (name,i)))
 
         list_clipped = [
-                tf.IndexSlices(c_v, t.indices, t.dense_shape) if isinstance(t, tf.IndexSlices) else c_v
+                tf.IndexedSlices(c_v, t.indices, t.dense_shape) if isinstance(t, tf.IndexedSlices) else c_v
                 for (c_v), t in zip(values_clipped, t_list)]
 
     return list_clipped, use_norm

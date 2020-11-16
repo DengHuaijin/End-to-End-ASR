@@ -225,7 +225,7 @@ class Speech2TextDataLayer(DataLayer):
                         padded_shapes = ([None, self.params["num_audio_features"]], 1, [None], 1),
                         padding_values = (tf.cast(0, self.params["dtype"]), 0, self.target_pad_value, 0))
 
-            self._iterator = self._dataset.prefetch(tf.contrib.data.AUTOTUNE).make_initilizable_iterator()
+            self._iterator = self._dataset.prefetch(tf.contrib.data.AUTOTUNE).make_initializable_iterator()
             
             """
             从iterator取出来的数据只有一个batch_size大小
@@ -281,6 +281,7 @@ class Speech2TextDataLayer(DataLayer):
 
     def get_size_in_samples(self):
         return len(self._files)
-
+    
+    @property
     def input_tensors(self):
         return self._input_tensors

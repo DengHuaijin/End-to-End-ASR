@@ -206,7 +206,7 @@ class Model:
         self._num_objects_per_step = None
         self.skip_update_ph = None
 		
-    def compile(self, force_var_refuse = False, checkpoint = False):
+    def compile(self, force_var_reuse = False, checkpoint = False):
         """
         Tensorflow graph is built here.
         """
@@ -284,14 +284,15 @@ class Model:
                 var_list = [var for var in tf.trainable_variables() if not pattern.match(var.name)]
 
             self.train_op = optimize_loss(
-                loss = tf.cast(self.loss, tf.float32) + get_regularization_loss(),
+                loss = tf.cast(self.loss, tf.float32),
                 dtype = self.params["dtype"],
                 optimizer = self.params["optimizer"],
+                optimizer_params = self.params["optimizer_params"],
                 var_list = var_list,
                 clip_gradients = self.params.get("max_grad_norm", None),
                 learning_rate_decay_fn = lr_policy,
                 summaries = self.params.get("summaries", None),
-                larc_summaries = self.params.get("larc_summaries", None),
+                larc_params = self.params.get("larc_params", None),
                 loss_scaling = self.params.get("loss_scaling", 1.0),
                 loss_scaling_params = self.params.get("loss_scaling_params", None),
                 iter_size = self.params.get("iter_size", 1),
@@ -310,9 +311,10 @@ class Model:
                 deco_print("Complete list of variables:")
                 for var in tf.trainable_variables():
                     deco_print("{}".format(var.name), offset = 2)
-                deco_print("Trainable variables:")
-                total_params = 0
-                unknown_shapes = False
+            
+            deco_print("Trainable variables:")
+            total_params = 0
+            unknown_shapes = False
             
             for var in var_list:
                 var_params = 1
@@ -329,7 +331,7 @@ class Model:
             if unknown_shapes:
                 deco_print("Encountered unknown variable shape, can't compute total number of parameters")
             else:
-                deco_print("Total trainable parameters: {}".format(total_aprams))
+                deco_print("Total trainable parameters: {}".format(total_params))
 
     
     @abc.abstractmethod
@@ -406,7 +408,7 @@ class Model:
     @property
     def steps_in_epoch(self):
         
-        return self._step_in_epoch
+        return self._steps_in_epoch
 
     @property
     def last_step(self):

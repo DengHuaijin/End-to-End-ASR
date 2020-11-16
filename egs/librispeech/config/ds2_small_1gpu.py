@@ -28,7 +28,7 @@ base_params = {
     "lr_policy_params": {
         "learning_rate": 0.0001,
         "begin_decay_at": 0,
-        "deay_steps": 5000,
+        "decay_steps": 5000,
         "decay_rate": 0.9,
         "use_staircase_decay": True,
         "min_lr": 0.0},
@@ -37,7 +37,7 @@ base_params = {
     "regularizer_params": {"scale": 0.0005},
 
     "summaries": ['learning_rate', 'variables', 'gradients', 'larc_summaries',
-                  'varibale_norm', 'gradients_norm', 'gloabl_gradient_norm'],
+                  'variable_norm', 'gradients_norm', 'gloabl_gradient_norm'],
 
     "initializer": tf.contrib.layers.xavier_initializer,
     
@@ -94,7 +94,7 @@ train_params = {
             "num_audio_features": 96,
             "input_type": "spectrogram",
             "augmentation": {
-                "time_stretch_ratio": 0.05,
+                "speech_perturbation_ratio": 0.05,
                 "noise_level_min": -90,
                 "noise_level_max": -60,
             },

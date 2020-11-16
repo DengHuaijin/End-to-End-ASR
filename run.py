@@ -45,7 +45,8 @@ def main():
     # Create model and train/eval
     with tf.Graph().as_default():
         model = create_model(args, base_config, config_module, base_model, checkpoint)
-        
+        print(model)
+        sys.exit(0)
         if args.mode == "train":
             train(model, eval_model = None, debug_port = None)
         elif args.mode == "eval":

@@ -116,15 +116,15 @@ class DeepSpeech2Encoder(Encoder):
     def _encode(self, input_dict):
         source_sequence, src_length = input_dict["source_tensors"]
 
-        training = (self._model == "train")
+        training = (self._mode == "train")
         dropout_keep_prob = self.params["dropout_keep_prob"] if training else 0.0
         regularizer = self.params.get("regularizer", None)
         data_format = self.params.get("data_format", "channels_last")
         bn_momentum = self.params.get("bn_momentum", 0.99)
         bn_epsilon = self.params.get("bn_epsilon", 1e-3)
-
+        
         input_layer = tf.expand_dims(source_sequence, axis = -1) # expand channels dim BTFC
-
+        
         batch_size = input_layer.get_shape().as_list()[0]
         freq = input_layer.get_shape().as_list()[2]
 
@@ -145,9 +145,9 @@ class DeepSpeech2Encoder(Encoder):
             layout = "BTFC"
             dformat = "channels_last"
 
-        if layout == "BCFT":
+        if layout == "BCTF":
             top_layer = tf.transpose(input_layer, [0, 3, 1, 2])
-        elif layout == "BTFC":
+        elif layout == "BFTC":
             top_layer = tf.transpose(input_layer, [0, 2, 1, 3])
         elif layout == "BCFT":
             top_layer = tf.transpose(input_layer, [0, 3, 2, 1])
@@ -177,7 +177,7 @@ class DeepSpeech2Encoder(Encoder):
 
             top_layer = conv_bn_actv(
                     layer_type = "conv2d",
-                    name = "conv{}".format(dix_conv + 1),
+                    name = "conv{}".format(idx_conv + 1),
                     inputs = top_layer,
                     filters = ch_out,
                     kernel_size = kernel_size,
