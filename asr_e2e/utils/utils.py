@@ -476,3 +476,14 @@ def get_results_for_epoch(model, sess, compute_loss, mode, verbose = False):
         return results_per_batch, total_loss / total_samples
     else:
         return results_per_batch
+
+def log_summaries_from_dict(dict_to_log, output_dir, step):
+
+    sm_writer = tf.summary.FileWriterCache.get(output_dir)
+    for tag, value in dict_to_log.items():
+        if isinstance(value, tf.Summary.Value):
+            sm_writer.add_summary(tf.Summary(value = [value]), global_step - step)
+        else:
+            sm_writer.add_summary(tf.Summary(value = [tf.Summary.Value(tag = tag, sample_value = value)]), global_step = step)
+
+        sm_writer.flush()

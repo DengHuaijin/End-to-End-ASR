@@ -152,7 +152,7 @@ class Speech2Text(EncoderDecoderModel):
         
         return loss, model_outputs
 
-    def print_logs(self, input_values, output_values, training_step):
+    def maybe_print_logs(self, input_values, output_values, training_step):
 
         y, len_y = input_values["target_tensors"]
         decoded_sequence = output_values
