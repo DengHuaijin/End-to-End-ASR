@@ -13,7 +13,7 @@ class PrintSampleHook(tf.train.SessionRunHook):
     
     def __init__(self, every_steps, model):
         super(PrintSampleHook).__init__()
-        self._timer = tf.train.SecondStepTimer(every_steps = every_steps)
+        self._timer = tf.train.SecondOrStepTimer(every_steps = every_steps)
         self._iter_count = 0
         self._global_step = None
         self._model = model
@@ -27,7 +27,7 @@ class PrintSampleHook(tf.train.SessionRunHook):
         self._global_step = tf.train.get_global_step()
 
     def before_run(self, run_context):
-        if self._timer.shuould_trigger_for_step(self._iter_count):
+        if self._timer.should_trigger_for_step(self._iter_count):
             return tf.train.SessionRunArgs([self._fetches, self._global_step])
         return tf.train.SessionRunArgs([[], self._global_step])
 
@@ -52,7 +52,7 @@ class PrintLossAndTimeHook(tf.train.SessionRunHook):
 
     def __init__(self, every_steps, model):
         super(PrintLossAndTimeHook).__init__()
-        self._timer = tf.train.SecondStepTimer(every_steps = every_steps)
+        self._timer = tf.train.SecondOrStepTimer(every_steps = every_steps)
         self._every_steps = every_steps
         self._iter_count = 0
         self._global_step = None
@@ -62,10 +62,10 @@ class PrintLossAndTimeHook(tf.train.SessionRunHook):
 
     def begin(self):
         self._iter_count = 0
-        sefl._global_step = 0
+        self._global_step = 0
 
     def before_run(self, run_context):
-        if self._timer.shuould_trigger_for_step(self._iter_count):
+        if self._timer.should_trigger_for_step(self._iter_count):
             return tf.train.SessionRunArgs([self._fetches, self._global_step])
         return tf.train.SessionRunArgs([[], self._global_step])
 

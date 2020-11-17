@@ -4,6 +4,9 @@ from __future__ import unicode_literals
 import math
 import tensorflow as tf
 
+def fixed_lr(global_step, learning_rate):
+    return learning_rate
+
 def exp_decay(global_step, learning_rate,
               decay_steps,decay_rate, use_staircase_decay, 
               begin_decay_at = 0, min_lr = 0):
