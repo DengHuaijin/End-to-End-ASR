@@ -27,13 +27,12 @@ def train(train_model, eval_model = None, debug_port = None):
         # /usr/local/lib/python3.5/dist-packages/tensorflow/python/framework/op_def_library.py 698
         saver = tf.train.Saver(var_list = None, save_relative_paths = True, max_to_keep = train_model.params["num_checkpoints"])
         
-        hooks.append(tf.train.CheckpointSaverHook(checkpoint_dir, saver = saver, save_steps = train_model.params["save_checkpoint_secs"]))
+        hooks.append(tf.train.CheckpointSaverHook(checkpoint_dir, saver = saver, save_steps = train_model.params["save_checkpoint_steps"]))
 
     if train_model.params["print_loss_steps"] is not None:
         hooks.append(PrintLossAndTimeHook(
             every_steps = train_model.params["print_loss_steps"],
-            model = train_model,
-            print_ppl = False))
+            model = train_model))
     
     if train_model.params["print_samples_steps"] is not None:
         hooks.append(PrintSampleHook(
@@ -101,7 +100,7 @@ def train(train_model, eval_model = None, debug_port = None):
         if sess.should_stop():
             break
         try:
-            feed_dict = []
+            feed_dict = {}
             iter_size = train_model.params.get("iter_size", 1)
             if iter_size > 1:
                 feed_dict[train_model.skip_update_ph] = step % iter_size != 0

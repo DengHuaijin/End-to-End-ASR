@@ -3,10 +3,11 @@ from __future__ import unicode_literals
 
 import collections
 import six
+import sys
 import tensorflow as tf
 from tensorflow.python.ops import control_flow_ops
 
-from asr_e2e.utils.utils import mask_nans, check_params
+from asr_e2e.utils.utils import mask_nans, check_params, deco_print
 # from .automatic_loss_scaler import AutomaticLossScaler
 # from .mp_wrapper import MixedPrecisionOptimizerWrapper
 
@@ -142,7 +143,6 @@ def optimize_loss(loss,
         
         # ensure the train tensor computes grad_updates
         train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
-
         return train_tensor
 
 def post_process_gradients(grads_and_vars, summaries, lr, 
@@ -291,3 +291,7 @@ def _clip_by_global_norm(t_list, clip_norm, use_norm, name = None):
 
     return list_clipped, use_norm
 
+def _global_norm_with_cast(grads_and_vars):
+    return tf.global_norm(list(map(
+        lambda x: tf.cast(x, tf.float32),
+        list(zip(*grads_and_vars))[0])))
