@@ -38,6 +38,9 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 
 **global_step()** -> **update_ops** -> **optimizer** -> **opt.compute_gradients** -> **opt.apply_gradients**
 
+编写optimizer测试用例时，最好从optimize_loss函数中返回grads_and_vars，提取里面的梯度grad，然后对比sess.run(grad)
+和手动计算出的梯度值，官方是在horovod和iter_size的基础上测试的，这里暂时不需要。
+
 ## train
 
 2020/11/12 发现了一个很奇怪的bug，没有hook的话变量无法保存，训练无法启动，可以尝试不使用estimator
