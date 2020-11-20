@@ -123,6 +123,7 @@ def optimize_loss(loss,
         """
         grads_and_vars = opt.compute_gradients(
                 loss, colocate_gradients_with_ops = True, var_list = var_list)
+        print("#################\n", grads_and_vars, "\n##################\n")
 
         """
         apply_gradients returns an Operation that applies gradients.
@@ -142,8 +143,10 @@ def optimize_loss(loss,
                 global_step = global_step)
         
         # ensure the train tensor computes grad_updates
+        print("###########\n {} \n#########\n".format(grad_updates))
         train_tensor = control_flow_ops.with_dependencies([grad_updates], loss)
-        return train_tensor
+        print("###########\n {} \n#########\n".format(train_tensor))
+        return train_tensor, grads_and_vars
 
 def post_process_gradients(grads_and_vars, summaries, lr, 
                            clip_gradients,larc_params):

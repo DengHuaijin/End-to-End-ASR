@@ -283,7 +283,7 @@ class Model:
                 pattern = re.compile(freeze_variables_regex)
                 var_list = [var for var in tf.trainable_variables() if not pattern.match(var.name)]
 
-            self.train_op = optimize_loss(
+            self.train_op, _ = optimize_loss(
                 loss = tf.cast(self.loss, tf.float32),
                 dtype = self.params["dtype"],
                 optimizer = self.params["optimizer"],
