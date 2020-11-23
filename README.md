@@ -55,6 +55,8 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 
 2020/11/16 加入对hook的支持，在hooks.py中继承官方的tf.train.SessionRunHook类自定义hook，因为现阶段还是用estimator更方便一些
 
+2020/11/23 fetches中混入了一个int类型的变量，导致run不起来，需要找到变量源
+
 ## Speech2TextDataLayer
 
 data_split() 在train模式下应该对数据按GPU数量进行分割，反之在eval模式下不分割

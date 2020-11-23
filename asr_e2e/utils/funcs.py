@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from six.moves import range
 
-from .utils import deco_print, get_results_for_epoch
+from .utils import deco_print, get_results_for_epoch, mark_print
 from .hooks import PrintSampleHook, PrintLossAndTimeHook
 
 def train(train_model, eval_model = None, debug_port = None):
@@ -105,7 +105,9 @@ def train(train_model, eval_model = None, debug_port = None):
             if iter_size > 1:
                 feed_dict[train_model.skip_update_ph] = step % iter_size != 0
             if step % iter_size == 0:
+                mark_print(fetches)
                 fetches_vals = sess.run(fetches, feed_dict)
+                
             else:
                 # necessary to skip "no-update" steps when iter_size > 1
                 def run_with_no_hooks(step_context):
