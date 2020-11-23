@@ -259,6 +259,8 @@ def deco_print(line, offset = 0, start="*** ", end = "\n"):
     else:
         print(start + " " * offset + line, end = end)
 
+def mark_print(line):
+    print("##########", line, "##########")
 
 def clip_last_batch(last_batch, true_size):
 
