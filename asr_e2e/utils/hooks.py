@@ -42,11 +42,7 @@ class PrintSampleHook(tf.train.SessionRunHook):
         input_values, output_values = results
         dict_to_log = self._model.maybe_print_logs(input_values, output_values, step)
 
-<<<<<<< HEAD
         if self._model.params["save_summaries_steps"] and dict_to_log:
-=======
-        if self.model.params["save_summaries_steps"] and dict_to_log:
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
             log_summaries_from_dict(
                     dict_to_log,
                     self._model.params["logdir"],
@@ -66,11 +62,7 @@ class PrintLossAndTimeHook(tf.train.SessionRunHook):
 
     def begin(self):
         self._iter_count = 0
-<<<<<<< HEAD
         self._global_step = tf.train.get_global_step()
-=======
-        self._global_step = 0
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
 
     def before_run(self, run_context):
         if self._timer.should_trigger_for_step(self._iter_count):
@@ -89,21 +81,13 @@ class PrintLossAndTimeHook(tf.train.SessionRunHook):
         if self._model.steps_in_epoch is None:
             deco_print("Global step {}:".format(step), end = " ")
         else:
-<<<<<<< HEAD
             deco_print("Epoch {}, global step {}:".format(step // self._model.steps_in_epoch, step), end = " ")
-=======
-            deco_print("Epoch {}, global step {}:".format(step // self._mdoel.steps_in_epoch, step), end = " ")
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
 
         loss = results[0]
 
         deco_print("Train loss: {:.4f}".format(loss), offset = 4)
 
-<<<<<<< HEAD
         tm = (time.time() - self._last_time) / self._every_steps
-=======
-        tm = (time,time() - self._last_time) / self._every_steps
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
         m, s = divmod(tm, 60)
         h, m = divmod(m ,60)
 

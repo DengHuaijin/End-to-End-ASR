@@ -489,10 +489,6 @@ def log_summaries_from_dict(dict_to_log, output_dir, step):
         if isinstance(value, tf.Summary.Value):
             sm_writer.add_summary(tf.Summary(value = [value]), global_step - step)
         else:
-<<<<<<< HEAD
             sm_writer.add_summary(tf.Summary(value = [tf.Summary.Value(tag = tag, simple_value = value)]), global_step = step)
-=======
-            sm_writer.add_summary(tf.Summary(value = [tf.Summary.Value(tag = tag, sample_value = value)]), global_step = step)
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
 
         sm_writer.flush()
