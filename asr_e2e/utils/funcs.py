@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function, division
 from __future__ import unicode_literals
 
 import time
-
+import sys
 import numpy as np
 import tensorflow as tf
 
@@ -82,7 +82,6 @@ def train(train_model, eval_model = None, debug_port = None):
     except NotImplementedError:
         deco_print("WARNING: Can't compute number of objects per step, since train model does not define get_num_objects_per_step method")
 
-    
     # Starting training
     sess = tf.train.MonitoredTrainingSession(
             scaffold = scaffold,
@@ -94,8 +93,7 @@ def train(train_model, eval_model = None, debug_port = None):
             stop_grace_period_secs = 300,
             hooks = hooks)
     step = 0
-    num_bench_updates = 0
-
+    # sys.exit(0)
     while True:
         if sess.should_stop():
             break
@@ -105,7 +103,7 @@ def train(train_model, eval_model = None, debug_port = None):
             if iter_size > 1:
                 feed_dict[train_model.skip_update_ph] = step % iter_size != 0
             if step % iter_size == 0:
-                mark_print(fetches)
+                # mark_print(fetches)
                 fetches_vals = sess.run(fetches, feed_dict)
                 
             else:

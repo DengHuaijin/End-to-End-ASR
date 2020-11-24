@@ -277,7 +277,7 @@ class Speech2TextDataLayer(DataLayer):
                np.int32([len(source)]),\
                np.int32(target),\
                np.int32([len(target)]),\
-               np.float([audio_duration])
+               np.float32([audio_duration])
 
     def get_size_in_samples(self):
         return len(self._files)

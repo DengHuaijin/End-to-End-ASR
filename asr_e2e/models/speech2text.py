@@ -42,7 +42,7 @@ def dense_tensor_to_chars(tensor, idx2char, startindex, endindex):
     return text
 
 def levenshtein(a,b):
-    n, m = len(a), b
+    n, m = len(a), len(b)
     # make sure len(a) < len(b)
     if n > m:
         a,b = b,a
@@ -91,12 +91,13 @@ class Speech2Text(EncoderDecoderModel):
         self.is_bpe = data_layer.params.get("bpe", False)
         self.tensor_to_chars = sparse_tensor_to_chars
         self.autoaregressive = data_layer.params.get("autoaregressive", False)
+        self.tensor_to_char_params = {}
         if self.autoaregressive:
             self.params["decoder_params"]["GO_SYMBOL"] = data_layer.start_index
             self.params["decoder_params"]["END_SYMBOM"] = data_layer.end_index
             self.tensor_to_chars = dense_tensor_to_chars
-            self.tensor_to_chars_params["startindex"] = data_layer.start_index
-            self.tensor_to_chars_params["endindex"] = data_layer.end_index
+            self.tensor_to_char_params["startindex"] = data_layer.start_index
+            self.tensor_to_char_params["endindex"] = data_layer.end_index
 
         return super(Speech2Text, self)._create_decoder()
 
