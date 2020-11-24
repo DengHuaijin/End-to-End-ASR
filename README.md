@@ -7,11 +7,8 @@
 
 2020/11/17 模型compile实现
 
-<<<<<<< HEAD
 2020/11/25 模型训练实现
 
-=======
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
 ## **class Model**
 初始版本不需要interence模式 horovod模式 以及interactive模式，后面有需求再添加
 
@@ -60,14 +57,12 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 
 2020/11/16 加入对hook的支持，在hooks.py中继承官方的tf.train.SessionRunHook类自定义hook，因为现阶段还是用estimator更方便一些
 
-<<<<<<< HEAD
 2020/11/23 fetches中混入了一个int类型的变量，导致run不起来，需要找到变量源。不过暂时没找到，缓兵之计是在tf的源码中把这个判断无视掉，
 不让他报错，具体是在 **/usr/local/lib/python3.5/dist-packages/tensorflow/python/client/session.py** 里面实现。
 
 目前是能train起来，先训练一遍看看结果和log吧
-=======
+
 2020/11/23 fetches中混入了一个int类型的变量，导致run不起来，需要找到变量源
->>>>>>> c704f3214e84b24cfc3d1f8d760698de69933b23
 
 ## Speech2TextDataLayer
 
