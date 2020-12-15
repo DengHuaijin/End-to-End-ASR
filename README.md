@@ -65,6 +65,8 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 里面实现。
 目前是能train起来，先训练一遍看看结果和log吧
 
+2020/12/15 WER和Loss都降不下来，尤其是WER，长期在0.9徘徊甚至超过1，需要检查一下距离计算代码，同时观察tensorboard
+
 
 ## Speech2TextDataLayer
 
