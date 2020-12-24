@@ -9,6 +9,8 @@
 
 2020/11/25 模型训练实现
 
+2020/12/24 模型evaluate+infer实现(WER仍然很高，明显训练出了问题)
+
 ## **class Model**
 初始版本不需要interence模式 horovod模式 以及interactive模式，后面有需求再添加
 

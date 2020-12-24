@@ -207,8 +207,8 @@ class Speech2Text(EncoderDecoderModel):
         else:
             decoded_text = self.tensor_to_chars(
                     decoded_sequence,
-                    self,get_data_layer().params["idx2char"],
-                    **self.tensor_to_chars_params)
+                    self.get_data_layer().params["idx2char"],
+                    **self.tensor_to_char_params)
 
         batch_size = input_values["source_tensors"][0].shape[0]
         for sample_id in range(batch_size):
@@ -216,12 +216,69 @@ class Speech2Text(EncoderDecoderModel):
             len_y = input_values["target_tensors"][1][sample_id]
         
             true_text = "".join(map(self.get_data_layer().params["idx2char"].get, y[:len_y]))
-            pred_text = "".join(decoded_text[sample_di])
+            pred_text = "".join(decoded_text[sample_id])
 
             if self.get_data_layer().params.get("autoaregressive", False):
                 true_text = true_text[:-4]
 
-            total_word_lev += levenshtein(true_text.spilt(), pred_text.spilt())
+            total_word_lev += levenshtein(true_text.split(), pred_text.split())
             total_word_count += len(true_text.split())
         
         return total_word_lev, total_word_count
+
+    def infer(self, input_values, output_values):
+        preds = []
+        decoded_sequence = output_values[0]
+
+        if self.dump_outputs:
+            for i in range(decoded_sequence.shape[0]):
+                preds.append(decoded_sequence[i, :, :].squeeze())
+        else:
+            decoded_texts = self.tensor_to_chars(
+                    decoded_sequence,
+                    self.get_data_layer().params["idx2char"],
+                    **self.tensor_to_char_params)
+            for decoded_text in decoded_texts:
+                preds.append("".join(decoded_text))
+        return preds, input_values["source_ids"]
+
+    def finalize_inference(self, results_per_batch, output_file):
+        preds = []
+        ids = []
+
+        for result, idx in results_per_batch:
+            preds.extend(result)
+            ids.extend(idx)
+
+        preds = np.array(preds)
+        ids = np.hstack(ids)
+        preds = preds[np.argsort(ids)]
+        
+        if self.dump_outputs:
+            dump_out = {}
+            dump_results = {}
+            files = self.get_data_layer().all_files
+            for i, f in enumerate(files):
+                dump_results[f] = preds[i]
+            dump_out["logits"] = dump_results
+            step_size = self.get_data_layer().params["window_stride"]
+            scale = 1
+            for layers in ["convnet_layers", "conv_layers", "cnn_layers"]:
+                convs = self.encoder.params.get(layers)
+                if convs:
+                    for c in convs:
+                        scale *= c["stride"][0]
+            dump_out["step_size"] = scale * step_size
+            dump_out["vocab"] = self.get_data_layer().params["idx2char"]
+            f = open(output_file, "wb")
+            pickle.dump(dump_out, f, protocol = pickle.HIGHEST_PROTOCOL)
+            f.close()
+        else:
+            pd.DataFrame(
+                    {
+                        "wav_filename": self.get_data_layer().all_files,
+                        "predicted_transcription": preds
+                    },
+                    columns = ["wav_filename", "predicted_transcription"]
+                    ).to_csv(output_file, index = False)
+

@@ -55,6 +55,7 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
     
     train_config = copy.deepcopy(base_config)
     eval_config = copy.deepcopy(base_config)
+    infer_config = copy.deepcopy(base_config)
 
     if args.mode == "train":
         """
@@ -70,8 +71,16 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
         
         if "eval_params" in config_module:
             nested_update(eval_config, copy.deepcopy(config_module["eval_params"]))
-            deco_print("Evaluation config:")
-            pprint.pprint(eval_config)
+        deco_print("Evaluation config:")
+        pprint.pprint(eval_config)
+
+    if args.mode == "infer":
+        if args.infer_output_file is None:
+            raise ValueError("infer_output_file parameter is reuqired in infer mode")
+        # if "infer_params" in config_module:
+        nested_update(infer_config, copy.deepcopy(config_module["eval_params"]))
+        deco_print("Inference config:")
+        pprint.pprint(infer_config)
     
     if args.mode == "train":
         model = base_model(params = train_config, mode = "train")
@@ -80,7 +89,10 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
     elif args.mode == "eval":
         model = base_model(params = eval_config, mode = "eval")
         model.compile(force_var_reuse = False)
-    
+    else:
+        model = base_model(params = infer_config, mode = args.mode)
+        model.compile(checkpoint = checkpoint)
+        # model.compile(force_var_reuse = False)
     return model
 
 def flatten_dict(dct):
@@ -138,9 +150,9 @@ def get_base_config(args):
     
     parser.add_argument("--config_file", required = True, help = "Path to the config file")
     
-    parser.add_argument("--mode", default = "train", help = "train, eval, train_eval")
+    parser.add_argument("--mode", default = "train", help = "train, eval, infer")
 
-    # parser.add_argument("--infer_output_file", default = "infer-output.txt", help = "Path to the output of inference")
+    parser.add_argument("--infer_output_file", default = "librispeech_infer.txt", help = "Path to the output of inference")
     # store_true 默认为False, 如果在参数中出现则设置为True
     parser.add_argument("--continue_learning", action = "store_true")
 
@@ -148,8 +160,8 @@ def get_base_config(args):
 
     args, unknown = parser.parse_known_args(args)
 
-    if args.mode not in ["train", "eval"]:
-        raise ValueError("Mode has to be one of 'train', 'eval'")
+    if args.mode not in ["train", "eval", "infer"]:
+        raise ValueError("Mode has to be one of 'train', 'eval' and 'infer'")
 
     # run_path返回一个top-level的字典
     config_module = runpy.run_path(args.config_file, init_globals = {'tf':tf})
@@ -188,9 +200,9 @@ def check_base_model_logdir(base_logdir, args, restore_best_checkpoint = False):
         ckpt_dir = os.path.join(base_logdir, "logs")
         if not os.path.isdir(ckpt_dir):
             raise IOError("There is no folder for 'logs' in the base model logdir.\
-                           If checkpoints exist, put them in the logs 'foler'")
-        else:
-            ckpt_dir = base_logdir
+                           If checkpoints exist, put them in the logs 'folder'")
+    else:
+        ckpt_dir = base_logdir
 
     if restore_best_checkpoint and os.path.isdir(os.path.join(ckpt_dir, 'best_models')):
         ckpt_dir = os.path.join(ckpt_dir, 'best_models')
@@ -228,9 +240,9 @@ def check_logdir(args, base_config, restore_best_checkpoint=False):
                 if args.continue_learning:
                     raise IOError("The log directory is empty or does not exist.")
         
-        elif args.mode == "eval":
+        elif args.mode == "eval" or args.mode == "infer":
             
-            if os.path.isdir(logdir) and os.path.listdir(logdir) != []:
+            if os.path.isdir(logdir) and os.listdir(logdir) != []:
                 best_ckpt_dir = os.path.join(ckpt_dir, 'best_models')
                 
                 if restore_best_checkpoint and os.path.isdir(best_ckpt_dir):
@@ -267,7 +279,7 @@ def clip_last_batch(last_batch, true_size):
     last_batch_clipped = []
     for val in last_batch:
         if isinstance(val, tf.SparseTensorValue):
-            last_batch_clipped.appned(clip_sparse(val, true_size))
+            last_batch_clipped.append(clip_sparse(val, true_size))
         else:
             last_batch_clipped.append(val[:true_size])
     return last_batch_clipped
@@ -373,7 +385,7 @@ def iterate_data(model, sess, compute_loss, mode, verbose, num_steps = None):
         if compute_loss:
             cur_fetches.append(model.eval_losses[worker_id])
         if size_defined:
-            dk_sizes.append(model.get_data_layer(worker_id).get_size_in_samples)
+            dl_sizes.append(model.get_data_layer(worker_id).get_size_in_samples())
         try:
             total_objects = 0.0
             cur_fetches.append(model.get_num_objects_per_step(worker_id))
@@ -431,6 +443,8 @@ def iterate_data(model, sess, compute_loss, mode, verbose, num_steps = None):
 
             if mode == "eval":
                 results_per_batch.append(model.evaluate(inputs, outputs))
+            elif mode == "infer":
+                results_per_batch.append(model.infer(inputs, outputs))
             else:
                 raise ValueError("Unknown mode: {}".format(mode))
         

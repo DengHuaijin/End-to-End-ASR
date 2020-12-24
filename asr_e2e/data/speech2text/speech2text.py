@@ -224,15 +224,56 @@ class Speech2TextDataLayer(DataLayer):
                         self.params["batch_size"],
                         padded_shapes = ([None, self.params["num_audio_features"]], 1, [None], 1),
                         padding_values = (tf.cast(0, self.params["dtype"]), 0, self.target_pad_value, 0))
+            
+            else:
+                indices = self.split_data(np.array(list(map(str, range(len(self.all_files))))))
+                self._dataset = tf.data.Dataset.from_tensor_slices(
+                        np.hstack((indices[:, np.newaxis], self._files[:, np.newaxis])))
+                self._dataset = self._dataset.repeat()
+                self._dataset = self._dataset.prefetch(tf.contrib.data.AUTOTUNE)
+                self._dataset = self._dataset.map(
+                        lambda line: tf.py_func(
+                            self._parse_audio_element,
+                            [line],
+                            [self.params["dtype"], tf.int32, tf.int32, tf.float32],
+                            stateful = False), num_parallel_calls = 8)
 
+                if self.params["max_duration"] > 0:
+                    self._dataset = self._dataset.filter(
+                            lambda x, x_len, idx, duration:
+                            tf.less_equal(duration, self.params["max_duration"]))
+                
+                if self.params["min_duration"] > 0:
+                    self._dataset = self._dataset.filter(
+                            lambda x, x_len, y, y_len, duration:
+                            tf.greater_equal(duration, self.params["max_duration"]))
+
+                self._dataset = self._dataset.map(
+                        lambda x, x_len, idx, duration:
+                        [x, x_len, idx],
+                        num_parallel_calls = 16)
+                
+                """
+                所有的source统一用[None, num_audio_features]大小的0来填充
+                None表示source中最大的length
+                同理，target也用[None]大小的target_pad_value来填充
+                """
+                self._dataset = self._dataset.padded_batch(
+                        self.params["batch_size"],
+                        padded_shapes = ([None, self.params["num_audio_features"]], 1, 1))
+            
             self._iterator = self._dataset.prefetch(tf.contrib.data.AUTOTUNE).make_initializable_iterator()
             
             """
             从iterator取出来的数据只有一个batch_size大小
             """
-            x, x_length, y, y_length = self._iterator.get_next()
-            y.set_shape([self.params["batch_size"], None])
-            y_length = tf.reshape(y_length, [self.params["batch_size"]])
+            if self.params["mode"] != "infer":
+                x, x_length, y, y_length = self._iterator.get_next()
+                y.set_shape([self.params["batch_size"], None])
+                y_length = tf.reshape(y_length, [self.params["batch_size"]])
+            else:
+                x, x_length, x_id = self._iterator.get_next()
+                x_id = tf.reshape(x_id, [self.params["batch_size"]])
             
             # [B,T,F]
             x.set_shape([self.params["batch_size"], None, self.params["num_audio_features"]])
@@ -246,7 +287,11 @@ class Speech2TextDataLayer(DataLayer):
 
             self._input_tensors = {}
             self._input_tensors["source_tensors"] = [x, x_length]
-            self._input_tensors["target_tensors"] = [y, y_length]
+            
+            if self.params["mode"] != "infer":
+                self._input_tensors["target_tensors"] = [y, y_length]
+            else:
+                self._input_tensors["source_ids"] = [x_id]
 
     def _parse_audio_transcript_element(self, element):
         """
@@ -277,6 +322,14 @@ class Speech2TextDataLayer(DataLayer):
                np.int32([len(source)]),\
                np.int32(target),\
                np.int32([len(target)]),\
+               np.float32([audio_duration])
+
+    def _parse_audio_element(self, id_and_audio_filename):
+        idx, audio_filename = id_and_audio_filename
+        source, audio_duration = get_speech_features_from_file(audio_filename, params = self.params)
+
+        return source.astype(self.params["dtype"].as_numpy_dtype()),\
+               np.int32([len(source)]), np.int32([idx]),\
                np.float32([audio_duration])
 
     def get_size_in_samples(self):

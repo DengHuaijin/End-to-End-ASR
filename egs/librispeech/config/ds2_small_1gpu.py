@@ -9,6 +9,9 @@ from asr_e2e.optimizers.lr_policies import exp_decay
 base_model = Speech2Text
 
 base_params = {
+
+    "load_model": "egs/librispeech/ds2_log",
+
     "random_seed": 0,
     "num_epochs": 12,
     

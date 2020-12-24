@@ -117,7 +117,7 @@ class DeepSpeech2Encoder(Encoder):
         source_sequence, src_length = input_dict["source_tensors"]
 
         training = (self._mode == "train")
-        dropout_keep_prob = self.params["dropout_keep_prob"] if training else 0.0
+        dropout_keep_prob = self.params["dropout_keep_prob"] if training else 1.0
         regularizer = self.params.get("regularizer", None)
         data_format = self.params.get("data_format", "channels_last")
         bn_momentum = self.params.get("bn_momentum", 0.99)

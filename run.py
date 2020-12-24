@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from asr_e2e.utils.utils import deco_print, get_base_config, check_base_model_logdir, create_logdir, check_logdir, create_model
 
-from asr_e2e.utils import train, evaluate
+from asr_e2e.utils import train, evaluate, infer
 
 def main():
 
@@ -19,6 +19,7 @@ def main():
     import sys
     args, base_config, base_model, config_module = get_base_config(sys.argv[1:])
 
+    # load_model: model directory
     load_model = base_config.get('load_model', None)
     restore_best_checkpoint = base_config.get('restore_best_checkpoint', False)
     base_ckpt_dir = check_base_model_logdir(load_model, args, restore_best_checkpoint)
@@ -39,7 +40,7 @@ def main():
         else:
             deco_print("Resroring checkpoint from {}".format(checkpoint))
 
-    elif args.mode == "eval":
+    elif args.mode == "eval" or args.mode == "infer":
         deco_print("Loading model from {}".format(checkpoint))
 
     # Create model and train/eval
@@ -50,7 +51,9 @@ def main():
         if args.mode == "train":
             train(model, eval_model = None, debug_port = None)
         elif args.mode == "eval":
-            evluate(model, checkpoint)
+            evaluate(model, checkpoint)
+        elif args.mode == "infer":
+            infer(model, checkpoint, args.infer_output_file)
 
     if args.enable_logs:
         sys.stdout = old_stdout

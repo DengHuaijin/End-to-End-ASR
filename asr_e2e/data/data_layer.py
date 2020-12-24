@@ -14,7 +14,7 @@ class DataLayer:
 
     @staticmethod
     def get_required_params():
-        return {"mode": ["train", "eval"]}
+        return {"mode": ["train", "eval", "infer"]}
 
     @staticmethod
     def get_optional_params():

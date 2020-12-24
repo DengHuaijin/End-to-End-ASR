@@ -1,1 +1,1 @@
-from .funcs import train, evaluate
+from .funcs import train, evaluate, infer

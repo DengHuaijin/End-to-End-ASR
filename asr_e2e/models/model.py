@@ -103,8 +103,8 @@ class Model:
         self._mode = mode
         self._interactive = False
         
-        if self._mode not in ["train", "eval"]:
-            raise ValueError("Mode has to be one of [train, eval]")
+        if self._mode not in ["train", "eval", "infer"]:
+            raise ValueError("Mode has to be one of [train, eval, infer]")
         
         if "max_steps" in params and "num_epochs" in params:
             raise ValueError("You can't provide both of max_steps and num_epochs")
@@ -206,7 +206,7 @@ class Model:
         self._num_objects_per_step = None
         self.skip_update_ph = None
 		
-    def compile(self, force_var_reuse = False, checkpoint = False):
+    def compile(self, force_var_reuse = False, checkpoint = None):
         """
         Tensorflow graph is built here.
         """
@@ -365,6 +365,14 @@ class Model:
         dict: dictionary with values that need to be logged to Tensorboard.
         """
         return {}
+
+    def infer(self, input_values, output_values):
+
+        return []
+
+    def finilize_inference(self, results_per_batch, output_file):
+
+        pass
 
     def clip_last_batch(self, last_batch, true_size):
 

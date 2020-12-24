@@ -11,6 +11,7 @@ from six.moves import range
 
 from .utils import deco_print, get_results_for_epoch, mark_print
 from .hooks import PrintSampleHook, PrintLossAndTimeHook
+from .helpers import get_assign_ops_and_restore_dict
 
 def train(train_model, eval_model = None, debug_port = None):
     
@@ -123,18 +124,33 @@ def train(train_model, eval_model = None, debug_port = None):
     deco_print("Finished training")
 
 def restore_and_get_results(model, checkpoint, mode):
-    
+   
+    saver = tf.train.Saver()
+
     sess_config = tf.ConfigProto(allow_soft_placement = True)
     sess_config.gpu_options.allow_growth = True
 
     with tf.Session(config = sess_config) as sess:
+        assign_ops, restore_dict = get_assign_ops_and_restore_dict(checkpoint, True)
+        if assign_ops:
+            run_assign_and_saver(sess, checkpoint, assign_ops, restore_dict)
+        else:
+            saver = tf.train.Saver()
+            saver.restore(sess, checkpoint)
         results_per_batch = get_results_for_epoch(model, sess, mode = mode, compute_loss = False, verbose = True)
 
     return results_per_batch
 
 def evaluate(model, checkpoint):
     results_per_batch = restore_and_get_results(model, checkpoint, mode = "eval")
+    # sys.exit(0)
     eval_dict = model.finalize_evaluation(results_per_batch)
     deco_print("Fnished evaluation")
 
     return eval_dict
+
+def infer(model, checkpoint, output_file):
+    results_per_batch = restore_and_get_results(model, checkpoint, mode = "infer")
+    model.finalize_inference(results_per_batch, output_file)
+    deco_print("Finished inference")
+
