@@ -1,5 +1,5 @@
 # End-to-End-ASR 
-## NVIDIAのOpenSeq2Seqに基づく構築したEnd-to-End音声認識プラットフォーム
+## NVIDIAのOpenSeq2Seqに基づく構築したEnd-to-End音声認識ツールキット
 
 2020/10/23 モデルのベスクラスから書く(Model Encoder Decoder)
 
@@ -17,11 +17,13 @@
 
 ### モデルの訓練と評価
 
-- 訓練: python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode train
+評価モードでは単語誤り率しか出力されていない、推測モードでは認識した文字列が出力される。
 
-- 評価：python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode mode
+- 訓練(train): python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode train
 
-- 推測：python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode infer --infer_output_file librispeech_infer.txt
+- 評価(devlopment)：python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode mode
 
- 
+- 推測(test)：python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode infer --infer_output_file librispeech_infer.txt
+
+### デモ（単発話の認識） 
 
