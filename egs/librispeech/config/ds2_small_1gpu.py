@@ -10,7 +10,7 @@ base_model = Speech2Text
 
 base_params = {
 
-    "load_model": "egs/librispeech/ds2_log",
+    # "load_model": "egs/librispeech/ds2_log",
 
     "random_seed": 0,
     "num_epochs": 12,

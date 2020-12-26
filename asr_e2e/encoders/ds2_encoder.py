@@ -238,6 +238,9 @@ class DeepSpeech2Encoder(Encoder):
                 else:
                     raise ValueError(
                             "{} is not a valid rnn_type for cudnn_rnn layers".format(rnn_type))
+
+                top_layer, state = rnn_block(rnn_input)
+                top_layer = tf.transpose(top_layer, [1, 0, 2])
             else:
                 rnn_input = top_layer
                 multirnn_cell_fw = tf.nn.rnn_cell.MultiRNNCell(

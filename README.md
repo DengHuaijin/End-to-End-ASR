@@ -69,6 +69,7 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 
 2020/12/15 WER和Loss都降不下来，尤其是WER，长期在0.9徘徊甚至超过1，需要检查一下距离计算代码，同时观察tensorboard
 
+2020/12/25 发现encoder里面少了rnn最后的top_layer, 所以相当于只训练了cnn，重新训练一次看看效果
 
 ## Speech2TextDataLayer
 
