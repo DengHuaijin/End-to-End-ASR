@@ -82,6 +82,12 @@ def create_model(args, base_config, config_module, base_model, checkpoint = None
         deco_print("Inference config:")
         pprint.pprint(infer_config)
     
+    if args.mode == "interactive_infer":
+        # if "infer_params" in config_module:
+        nested_update(infer_config, copy.deepcopy(config_module["interactive_infer_params"]))
+        deco_print("Inference config:")
+        pprint.pprint(infer_config)
+    
     if args.mode == "train":
         model = base_model(params = train_config, mode = "train")
         model.compile()
@@ -150,7 +156,7 @@ def get_base_config(args):
     
     parser.add_argument("--config_file", required = True, help = "Path to the config file")
     
-    parser.add_argument("--mode", default = "train", help = "train, eval, infer")
+    parser.add_argument("--mode", default = "train", help = "train, eval, infer, interactive_infer")
 
     parser.add_argument("--infer_output_file", default = "librispeech_infer.txt", help = "Path to the output of inference")
     # store_true 默认为False, 如果在参数中出现则设置为True
@@ -160,8 +166,8 @@ def get_base_config(args):
 
     args, unknown = parser.parse_known_args(args)
 
-    if args.mode not in ["train", "eval", "infer"]:
-        raise ValueError("Mode has to be one of 'train', 'eval' and 'infer'")
+    if args.mode not in ["train", "eval", "infer", "interactive_infer"]:
+        raise ValueError("Mode has to be one of 'train', 'eval' and 'infer' 'interactive_infer'")
 
     # run_path返回一个top-level的字典
     config_module = runpy.run_path(args.config_file, init_globals = {'tf':tf})
@@ -240,7 +246,7 @@ def check_logdir(args, base_config, restore_best_checkpoint=False):
                 if args.continue_learning:
                     raise IOError("The log directory is empty or does not exist.")
         
-        elif args.mode == "eval" or args.mode == "infer":
+        elif args.mode == "eval" or args.mode == "infer" or args.mode == "interactive_infer":
             
             if os.path.isdir(logdir) and os.listdir(logdir) != []:
                 best_ckpt_dir = os.path.join(ckpt_dir, 'best_models')
@@ -506,3 +512,14 @@ def log_summaries_from_dict(dict_to_log, output_dir, step):
             sm_writer.add_summary(tf.Summary(value = [tf.Summary.Value(tag = tag, simple_value = value)]), global_step = step)
 
         sm_writer.flush()
+
+def get_interactive_infer_results(model, sess, model_input):
+    fetches = [
+            model.get_data_layer().input_tensors,
+            model.get_output_tensors()]
+    
+    feed_dict = model.get_data_layer().create_feed_dict(model_input)
+
+    inputs, outputs = sess.run(fetches, feed_dict = feed_dict)
+
+    return model.infer(inputs, outputs)

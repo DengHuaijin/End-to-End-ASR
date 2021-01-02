@@ -7,7 +7,9 @@
 
 2020/11/25 モデルの訓練が実現
 
-2020/12/24　モデルの評価と推測が実現（しかしWERが高い、訓練コードの問題だと考えている）
+2020/12/24 モデルの評価と推測が実現（しかしWERが高い、訓練コードの問題だと考えている）
+
+2021/01/02 単発話の認識が実現
 
 ### データセット：
 - LibriSpeech  [ここからダウンロード](http://www.openslr.org/12)
@@ -26,4 +28,7 @@
 - 推測(test)：python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode infer --infer_output_file librispeech_infer.txt
 
 ### デモ（単発話の認識） 
+- 単発話の認識(interactive_infer): python3 recognize.py --input_audio test_audio.wav
 
+### オンラインデモ
+- [開發中](https://github.com/DengHuaijin/ASR-online-demo)

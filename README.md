@@ -11,6 +11,8 @@
 
 2020/12/24 模型evaluate+infer实现(WER仍然很高，明显训练出了问题)
 
+2021/01/02 实现对单一语音文件的识别（后续追加录音功能）
+
 ## **class Model**
 初始版本不需要interence模式 horovod模式 以及interactive模式，后面有需求再添加
 

@@ -124,3 +124,16 @@ eval_params = {
             }
         }   
 
+interactive_infer_params = {
+        "data_layer": Speech2TextDataLayer,
+        "data_layer_params": {
+            "num_audio_features": 96,
+            "sample_freq": 16000,
+            "input_type": "spectrogram",
+            "vocab_file": "egs/librispeech/vocab.txt",
+            "dataset_files": [
+                "egs/librispeech/data/librispeech/librivox-dev-clean.csv",
+                ],
+            "shuffle": False
+            }
+        }   

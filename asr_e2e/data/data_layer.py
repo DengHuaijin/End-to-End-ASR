@@ -82,3 +82,9 @@ class DataLayer:
         Should return the dataset size in samples.
         """
         return None
+
+    def create_feed_dict(self, model_input):
+        pass
+
+    def create_interactive_placeholders(self):
+        pass

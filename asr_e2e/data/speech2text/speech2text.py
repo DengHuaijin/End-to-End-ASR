@@ -81,9 +81,11 @@ class Speech2TextDataLayer(DataLayer):
             self.params["idx2char"] = {i: w for w, i in self.params["char2idx"].items()}
 
         self.target_pad_value = 0
-
         self._files = None
-        
+
+        if self.params["interactive"]:
+            return 
+
         for csv in params["dataset_files"]:
             
             files = pd.read_csv(csv, encoding = "utf-8")
@@ -335,6 +337,73 @@ class Speech2TextDataLayer(DataLayer):
     def get_size_in_samples(self):
         return len(self._files)
     
+
+    def create_feed_dict(self, model_input):
+        """
+        model_input: a str that contains the path of the wav file or a 1-d array containing 1-d wav file
+        """
+        audio_array = []
+        audio_length_array = []
+        x_id_array = []
+
+        for line in model_input:
+            if isinstance(line, string_types):
+                audio, audio_length, x_id, _ = self._parse_audio_element([0, line])
+            elif isinstance(line, np.ndarray):
+                audio, audio_length, x_id, _ = self._get_audio(line)
+            else:
+                raise ValueError("Interactive mode only supports string or numpy array. Got {}".format(type(line)))
+
+            audio_array.append(audio)
+            audio_length_array.append(audio_length)
+            x_id_array.append(x_id)
+
+        max_len = np.max(audio_length_array)
+        pad_to = self.params.get("pad_to", 8)
+        if pad_to > 0 and self.params.get("backend") == "librosa":
+            max_len += (pad_to - max_len % pad_to) % pad_to
+        for i, audio in enumerate(audio_array):
+            audio = np.pad(audio, ((0, max_len - len(audio)), (0, 0)), "constant", constant_values = 0)
+            audio_array[i] = audio
+        
+        audio = np.reshape(audio_array,
+                        [self.params["batch_size"],
+                        -1,
+                        self.params["num_audio_features"]])
+
+        audio_length = np.reshape(audio_length_array, [self.params["batch_size"]])
+        x_id = np.reshape(x_id_array, [self.params["batch_size"]])
+
+        feed_dict = {
+                self._x: audio,
+                self._x_length: audio_length,
+                self._x_id: x_id}
+
+        return feed_dict
+
+    def create_interactive_placeholders(self):
+        self._x = tf.placeholder(
+                dtype = self.params["dtype"],
+                shape = [
+                    self.params["batch_size"],
+                    None,
+                    self.params["num_audio_features"]
+                    ]
+                )
+        
+        self._x_length = tf.placeholder(
+                dtype = tf.int32,
+                shape = [self.params["batch_size"]])
+
+        self._x_id = tf.placeholder(
+                dtype = tf.int32,
+                shape = [self.params["batch_size"]])
+
+        self._input_tensors = {}
+        self._input_tensors["source_tensors"] = [self._x, self._x_length]
+        self._input_tensors["source_ids"] = [self._x_id]
+
+
     @property
     def input_tensors(self):
         return self._input_tensors
