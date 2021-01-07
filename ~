@@ -25,7 +25,7 @@ def rnn_cell(rnn_cell_dim, layer_type, dropout_keep_prob = 1.0):
             raise ValueError("Error: not supported rnn type: {}".format(layer_type))
 
         cell = tf.nn.rnn_cell.DropoutWrapper(
-                cell, output_keep_prob = dropout_keep_prob)
+                cell, output_keep_drop = dropout_keep_prob)
 
     return cell
 
@@ -250,7 +250,7 @@ class DeepSpeech2Encoder(Encoder):
                             dropout_keep_prob = dropout_keep_prob)
                             for _ in range(num_rnn_layers)])
                 
-                if self.params["rnn_unidirectional"]:
+                if self.params["rnn_undirectional"]:
                     top_layer, state = tf.nn.dynamic_rnn(
                             cell = multirnn_cell_fw,
                             inputs = rnn_input,

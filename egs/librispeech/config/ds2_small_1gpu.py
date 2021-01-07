@@ -64,11 +64,11 @@ base_params = {
         "n_hidden": 1024,
 
         "rnn_cell_dim": 512,
-        "rnn_type": "cudnn_gru",
+        "rnn_type": "gru",
         "num_rnn_layers": 2,
         "rnn_unidirectional": False,
         "row_conv": False,
-        "use_cudnn_rnn": True,
+        "use_cudnn_rnn": False,
 
         "dropout_keep_prob": 0.5,
         "activation_fn": tf.nn.relu,
