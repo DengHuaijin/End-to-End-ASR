@@ -30,5 +30,9 @@
 ### デモ（単発話の認識） 
 - 単発話の認識(interactive_infer): python3 recognize.py --input_audio test_audio.wav
 
-### オンラインデモ
+### デモ
+- [オンラインデモ](8.136.104.182/demo/) 
+アップロードwavファイルだけ　録音機能が開発中
+サーバーが中国にいるので、反応遅い場合ある
+
 - [開發中](https://github.com/DengHuaijin/ASR-online-demo)
