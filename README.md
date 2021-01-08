@@ -27,7 +27,7 @@
 
 - 推測(test)：python3 run.py --config_file egs/librispeech/config/ds2_small_1gpu.py --mode infer --infer_output_file librispeech_infer.txt
 
-### デモ（単発話の認識） 
+### 単発話の認識
 - 単発話の認識(interactive_infer): python3 recognize.py --input_audio test_audio.wav
 
 ### デモ
