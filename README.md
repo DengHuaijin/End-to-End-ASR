@@ -31,7 +31,7 @@
 - 単発話の認識(interactive_infer): python3 recognize.py --input_audio test_audio.wav
 
 ### デモ
-- [オンラインデモ](8.136.104.182/demo/) 
+- [オンラインデモ](http://8.136.104.182/demo/) 
 
 アップロードwavファイルだけ　録音機能が開発中
 
