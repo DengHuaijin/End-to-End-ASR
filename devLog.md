@@ -75,6 +75,11 @@ optimizer.py中的optimize_loss是梯度更新的核心部分，其流程如下�
 
 2020/12/26 WER有所下降，但仍然较高，需要再对比一下tensorboard
 
+## infer_interactive
+
+2021/01/12 GPU训练的模型，用CPU识别单一句子的时候会报出 **conv2D only supports "NHWC"** 的错误，初步推测是因为
+在把feed_dict数据送入conv layer之前没有用**expand_dims**对 **source_tensor** 进行升维处理。但GPU模式下却没有问题
+
 ## Speech2TextDataLayer
 
 data_split() 在train模式下应该对数据按GPU数量进行分割，反之在eval模式下不分割
