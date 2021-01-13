@@ -21,13 +21,13 @@
 - 単発話の認識(interactive_infer): python3 recognize.py --input_audio test_audio.wav
 
 ### デモ
-- [オンラインデモ](https://www.speechdemo.top/demo/) 
+- [オンラインデモ](https://www.speechdemo.top/demo/) 手動でアドレスのところにマイクの使用を許可にしてください
 
-chromeブラウザを推薦
+ブラウザ：chromeが推薦
 
 アップロード: wavファイルだけ
 
-現時点英語だけ
+言語：英語
 
 サーバーが中国にいるので、反応遅い場合ある
 
