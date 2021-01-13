@@ -31,7 +31,7 @@
 - 単発話の認識(interactive_infer): python3 recognize.py --input_audio test_audio.wav
 
 ### デモ
-- [オンラインデモ](https://speechdemo/demo/) 
+- [オンラインデモ](https://www.speechdemo.top/demo/) 
 
 chromeブラウザを推薦
 
