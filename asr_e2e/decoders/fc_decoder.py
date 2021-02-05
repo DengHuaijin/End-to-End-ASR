@@ -113,10 +113,10 @@ class FullyConnectedCTCDecoder(FullyConnectedTimeDecoder):
             def decode_with_lm(logits, decoder_input, beam_width = self.params["beam_width"], top_paths = 1, merge_repeated = False):
                 sequence_length = decoder_input["encoder_output"]["src_length"]
 
-                if logits.dtype.base_type != tf.float32:
+                if logits.dtype.base_dtype != tf.float32:
                     logits = tf.cast(logits, tf.float32)
                 decoded_idx, decoded_vals, decoded_shapes, log_probabilities = (
-                    custom_op_module.ctc_beam_decoder_with_lm(
+                    custom_op_module.ctc_beam_search_decoder_with_lm(
                         logits, sequence_length, beam_width = beam_width,
                         model_path = self.params["lm_path"],
                         trie_path = self.params["trie_path"],

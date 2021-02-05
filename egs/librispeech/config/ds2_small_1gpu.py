@@ -23,7 +23,7 @@ base_params = {
     "print_samples_steps": 5000,
     "eval_steps": 5000,
     "save_checkpoint_steps": 1000,
-    "logdir": "egs/librispeech/ds2_log",
+    "logdir": "egs/librispeech/ds2_lm_log",
 
     "optimizer": "Adam",
     "optimizer_params": {},
@@ -76,13 +76,13 @@ base_params = {
 
     "decoder": FullyConnectedCTCDecoder,
     "decoder_params": {
-        "use_language_model" : False,
+        "use_language_model" : True,
 
         "beam_width": 512,
         "alpha": 2.0,
         "beta": 1.0,
 
-        "decoder_library_path": "ctc_decoder_with_lm/libctc_decoder_with_kenlm.so",
+        "decoder_library_path": "language_model/ctc_decoder_with_lm/libctc_decoder_with_kenlm.so",
         "trie_path": "language_model/trie.binary",
         "lm_path": "language_model/4-gram.binary",
         "alphabet_config_path": "egs/librispeech/config/vocab.txt",

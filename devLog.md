@@ -13,6 +13,8 @@
 
 2021/01/02 实现对单一语音文件的识别（后续追加录音功能）
 
+2021/2/05 通过google的bazel编译kenlm语言模型用于解码
+
 ## **class Model**
 初始版本不需要interence模式 horovod模式 以及interactive模式，后面有需求再添加
 
@@ -92,3 +94,8 @@ backend: librosa
 支持数据增强augmentation，即语音速率(采样率)的变化
 
 语音特征类型：mfcc, spectrogram, logfbank
+
+### language model
+推荐用bazel编译，因为有现成的BUILD文件可用。如果直接用g++编译的话会导致用tensorflow载入时缺少相关动态链接库
+
+编译生成ctc_decoder_with_kenlm.so时注意tensorflow目录下ctc的版本，需要tf-1.14对应的版本

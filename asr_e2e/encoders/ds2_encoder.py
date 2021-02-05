@@ -186,7 +186,7 @@ class DeepSpeech2Encoder(Encoder):
                     padding = padding,
                     regularizer = regularizer,
                     training = training,
-                    data_format = data_format,
+                    data_format = dformat,
                     bn_momentum = bn_momentum,
                     bn_epsilon = bn_epsilon)
 
