@@ -28,7 +28,9 @@
 アップロード: wavファイルだけ
 
 識別言語：
+
 英語-DeepSpeech2(本ツールキットより訓練)　
+
 日本語-kaldi nnet3(online2-wav-nnet3-faster-latgenよりデコーディング)
 
 サーバーが中国にいるので、反応(すごく)遅い場合ある T.T
