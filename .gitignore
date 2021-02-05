@@ -1,3 +1,4 @@
-egs/librispeech/ds2_log
+egs/librispeech/ds2_log/
+egs/librispeech/ds2_lm_log/
 language_model/
 nohup.out
